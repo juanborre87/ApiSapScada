@@ -23,11 +23,18 @@ public class SapOrderService : ISapOrderService
 
     public async Task<string?> GetOrderByIdAsync(string orderId)
     {
-        // Asegúrate de codificar correctamente la comilla simple dentro de la URL
-        var requestUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{orderId}'/?$format=json)";
+        var requestUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{orderId}')?$format=json";
 
         var response = await _httpClient.GetAsync(requestUrl);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[SAP Error {response.StatusCode}] {error}");
+            return null;
+        }
+
         return await response.Content.ReadAsStringAsync();
     }
+
 }
