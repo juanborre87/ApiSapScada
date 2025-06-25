@@ -85,7 +85,7 @@ public class CreateCommandHandler(
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,
-                Content = new CreateResponse { Result = false/*, ErrorMessage = ex.Message */}
+                Content = new CreateResponse { Result = false, Message = ex.Message }
             };
         }
 
