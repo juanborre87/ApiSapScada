@@ -25,6 +25,8 @@ public class CreateCommandHandler(
     {
         try
         {
+            await processOrderCommandSqlDB.BeginTransactionAsync();
+
             var material = request.EventPayload;
             if (material == null)
             {
@@ -73,6 +75,7 @@ public class CreateCommandHandler(
 
             // 3. Guardar en la base de datos
             await processOrderCommandSqlDB.AddAsync(processOrder);
+            await processOrderCommandSqlDB.CommitTransactionAsync();
 
             return new Response<CreateResponse>
             {
@@ -82,6 +85,8 @@ public class CreateCommandHandler(
         }
         catch (Exception ex)
         {
+            await processOrderCommandSqlDB.RollbackTransactionAsync();
+
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,
