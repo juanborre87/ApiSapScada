@@ -15,5 +15,7 @@ namespace Application.Interfaces
         Task<bool> AnyAsync(Expression<Func<T, bool>> filter);
 
         IQueryable<T> Include<TProperty>(Expression<Func<T, TProperty>> navigationPropertyPath);
+
+        Task<List<T>> GetAllAsync(bool tracking = true);
     }
 }

@@ -71,5 +71,19 @@ namespace Infrastructure.Services
 
         public virtual IQueryable<T> Include<TProperty>(Expression<Func<T, TProperty>> navigationPropertyPath)
         => _entity.Include(navigationPropertyPath);
+
+        public virtual async Task<List<T>> GetAllAsync(bool tracking = true)
+        {
+            try
+            {
+                return tracking
+                    ? await _entity.ToListAsync()
+                    : await _entity.AsNoTracking().ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.ToString());
+            }
+        }
     }
 }
