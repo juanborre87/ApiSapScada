@@ -25,8 +25,6 @@ public class CreateCommandHandler(
     {
         try
         {
-            await processOrderCommandSqlDB.BeginTransactionAsync();
-
             var material = request.EventPayload;
             if (material == null)
             {
@@ -44,7 +42,6 @@ public class CreateCommandHandler(
                 ProductId = Convert.ToInt64(material.Id),
                 ProductName = material.Data.Product,
             };
-            await productCommandSqlDB.AddAsync(product);
 
             var processOrder = new ProcessOrder
             {
@@ -73,9 +70,10 @@ public class CreateCommandHandler(
                 // Agrega más campos si los necesitas
             };
 
-            // 3. Guardar en la base de datos
+            // Guardar en la base de datos
+            await productCommandSqlDB.AddAsync(product);
             await processOrderCommandSqlDB.AddAsync(processOrder);
-            await processOrderCommandSqlDB.CommitTransactionAsync();
+            await processOrderCommandSqlDB.SaveChangesAsync();
 
             return new Response<CreateResponse>
             {
@@ -85,8 +83,6 @@ public class CreateCommandHandler(
         }
         catch (Exception ex)
         {
-            await processOrderCommandSqlDB.RollbackTransactionAsync();
-
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,

@@ -22,7 +22,6 @@ namespace Infrastructure.Services
             try
             {
                 await _entity.AddAsync(entity);
-                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -95,6 +94,18 @@ namespace Infrastructure.Services
                 await _transaction.RollbackAsync();
                 await _transaction.DisposeAsync();
                 _transaction = null;
+            }
+        }
+
+        public virtual async Task SaveChangesAsync()
+        {
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.ToString());
             }
         }
 

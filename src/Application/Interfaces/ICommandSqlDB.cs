@@ -9,5 +9,6 @@ public interface ICommandSqlDB<T> where T : class
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
     Task RollbackTransactionAsync();
+    Task SaveChangesAsync();
 
 }
