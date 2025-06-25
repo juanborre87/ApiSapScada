@@ -4,7 +4,7 @@ public partial class Product
 {
     public long ProductId { get; set; }
 
-    public string Product1 { get; set; }
+    public string ProductName { get; set; }
 
     public string ProductDescription { get; set; }
 

@@ -16,16 +16,17 @@ public class CreateCommand<T> : IRequest<Response<CreateResponse>>
 public class CreateCommandHandler(
     IConfiguration configuration,
     ISapOrderService sapOrderService,
-    ICommandSqlDB<ProcessOrder> commandSqlDB,
-    IQuerySqlDB<ProcessOrderStatus> statusQuery) :
-    IRequestHandler<CreateCommand<BatchData>, Response<CreateResponse>>
+    ICommandSqlDB<ProcessOrder> processOrderCommandSqlDB,
+    ICommandSqlDB<Product> productCommandSqlDB,
+    IQuerySqlDB<ProcessOrderStatus> statusQuerySqlDB) :
+    IRequestHandler<CreateCommand<MaterialData>, Response<CreateResponse>>
 {
-    public async Task<Response<CreateResponse>> Handle(CreateCommand<BatchData> request, CancellationToken cancellationToken)
+    public async Task<Response<CreateResponse>> Handle(CreateCommand<MaterialData> request, CancellationToken cancellationToken)
     {
         try
         {
-            var batch = request.EventPayload;
-            if (batch == null)
+            var material = request.EventPayload;
+            if (material == null)
             {
                 return new Response<CreateResponse>
                 {
@@ -34,13 +35,18 @@ public class CreateCommandHandler(
                 };
             }
 
-            // 1. Consultar SAP
-            var orderDto = await sapOrderService.GetOrderByIdAsync(batch.Id);
+            var orderDto = await sapOrderService.GetOrderByIdAsync(material.Id);
             var statusId = await GetStatusIdAsync(orderDto);
-            // 2. Mapear DTO a entidad EF
-            var entity = new ProcessOrder
+            var product = new Product
             {
-                ManufacturingOrder = Convert.ToInt64(orderDto.ManufacturingOrder),
+                ProductId = Convert.ToInt64(material.Id),
+                ProductName = material.Data.Product,
+            };
+            await productCommandSqlDB.AddAsync(product);
+
+            var processOrder = new ProcessOrder
+            {
+                ManufacturingOrder = product.ProductId,
                 ManufacturingOrderCategory = orderDto.ManufacturingOrderCategory,
                 ManufacturingOrderType = orderDto.ManufacturingOrderType,
                 GoodsRecipientName = orderDto.GoodsRecipientName,
@@ -66,7 +72,7 @@ public class CreateCommandHandler(
             };
 
             // 3. Guardar en la base de datos
-            await commandSqlDB.AddAsync(entity);
+            await processOrderCommandSqlDB.AddAsync(processOrder);
 
             return new Response<CreateResponse>
             {
@@ -135,7 +141,7 @@ public class CreateCommandHandler(
         {
             if (value == "X")
             {
-                var status = await statusQuery.FirstOrDefaultAsync(s => s.StatusDescription == description);
+                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.StatusDescription == description);
 
                 return status?.StatusId;
             }
