@@ -1,4 +1,7 @@
 ﻿using Application.Interfaces;
+using Domain.Models;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -21,11 +24,22 @@ public class SapOrderService : ISapOrderService
             new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
-    public async Task<string?> GetOrderByIdAsync(string orderId)
+    public async Task<OrderDto> GetOrderByIdAsync(string orderId)
     {
         var requestUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{orderId}')?$format=json";
 
-        var response = await _httpClient.GetAsync(requestUrl);
+        HttpResponseMessage response;
+
+        try
+        {
+            response = await _httpClient.GetAsync(requestUrl);
+        }
+        catch (Exception ex)
+        {
+            throw new HttpRequestException("Error al realizar la solicitud HTTP a SAP.", ex);
+        }
+
+        var responseContent = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
         {
@@ -34,7 +48,21 @@ public class SapOrderService : ISapOrderService
             return null;
         }
 
-        return await response.Content.ReadAsStringAsync();
+        try
+        {
+            var raw = JObject.Parse(responseContent);
+            var dto = JsonConvert.DeserializeObject<OrderDto>(raw["d"]?.ToString() ?? string.Empty);
+
+            if (dto == null)
+                throw new JsonException("No se pudo deserializar el objeto OrderDto desde SAP.");
+
+            return dto;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Error al deserializar la respuesta SAP a OrderDto.", ex);
+        }
+
     }
 
 }

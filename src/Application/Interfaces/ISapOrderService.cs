@@ -1,7 +1,9 @@
-﻿namespace Application.Interfaces
+﻿using Domain.Models;
+
+namespace Application.Interfaces
 {
     public interface ISapOrderService
     {
-        Task<string?> GetOrderByIdAsync(string orderId);
+        Task<OrderDto> GetOrderByIdAsync(string orderId);
     }
 }
