@@ -1,0 +1,6 @@
+@ApiSapScada_HostAddress = http://localhost:5052
+
+GET {{ApiSapScada_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
