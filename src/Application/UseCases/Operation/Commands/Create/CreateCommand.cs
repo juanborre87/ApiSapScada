@@ -4,6 +4,8 @@ using Domain.Models;
 using HostWorker.Models;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using System.Drawing;
+using System.Globalization;
 using System.Net;
 
 namespace Application.UseCases.Operation.Commands.Create;
@@ -40,7 +42,7 @@ public class CreateCommandHandler(
             var product = new Product
             {
                 ProductId = Convert.ToInt64(material.Id),
-                ProductName = material.Data.Product,
+                ProductName = orderDto.Material,
             };
 
             var processOrder = new ProcessOrder
@@ -66,6 +68,7 @@ public class CreateCommandHandler(
                 ProductionVersion = orderDto.ProductionVersion,
                 StorageLocation = orderDto.StorageLocation,
                 UnloadingPointName = orderDto.UnloadingPointName,
+                TotalQuantity = float.Parse(orderDto.TotalQuantity, CultureInfo.InvariantCulture),
                 Status = (byte)statusId
                 // Agrega más campos si los necesitas
             };
@@ -107,21 +110,28 @@ public class CreateCommandHandler(
     {
         try
         {
-            if (string.IsNullOrEmpty(datePart)) return null;
+            if (string.IsNullOrEmpty(datePart))
+                return null;
 
-            var millis = long.Parse(datePart.Replace("/Date(", "").Replace(")/", ""));
+            // Extraer milisegundos del string tipo "/Date(1738108800000)/"
+            var match = System.Text.RegularExpressions.Regex.Match(datePart, @"\/Date\((\d+)\)\/");
+            if (!match.Success || !long.TryParse(match.Groups[1].Value, out var millis))
+                return null;
+
             var date = DateTimeOffset.FromUnixTimeMilliseconds(millis).DateTime;
 
+            // Parsear hora si viene en formato "PT00H00M00S"
             if (!string.IsNullOrEmpty(timePart) && timePart.StartsWith("PT"))
             {
-                var t = System.Xml.XmlConvert.ToTimeSpan(timePart);
-                date = date.Date.Add(t);
+                var timeSpan = System.Xml.XmlConvert.ToTimeSpan(timePart);
+                date = date.Date.Add(timeSpan);
             }
 
             return date;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return null;
         }
     }
