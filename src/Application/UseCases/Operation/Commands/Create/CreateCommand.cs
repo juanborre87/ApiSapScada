@@ -76,7 +76,6 @@ public class CreateCommandHandler(
             // Guardar en la base de datos
             await productCommandSqlDB.AddAsync(product);
             await processOrderCommandSqlDB.AddAsync(processOrder);
-            await processOrderCommandSqlDB.SaveChangesAsync();
 
             return new Response<CreateResponse>
             {
@@ -113,18 +112,17 @@ public class CreateCommandHandler(
             if (string.IsNullOrEmpty(datePart))
                 return null;
 
-            // Extraer milisegundos del string tipo "/Date(1738108800000)/"
-            var match = System.Text.RegularExpressions.Regex.Match(datePart, @"\/Date\((\d+)\)\/");
-            if (!match.Success || !long.TryParse(match.Groups[1].Value, out var millis))
+            // Convertir directamente la cadena de milisegundos
+            if (!long.TryParse(datePart, out var millis))
                 return null;
 
             var date = DateTimeOffset.FromUnixTimeMilliseconds(millis).DateTime;
 
-            // Parsear hora si viene en formato "PT00H00M00S"
+            // Si hay hora tipo PT00H00M00S, la sumamos al día base
             if (!string.IsNullOrEmpty(timePart) && timePart.StartsWith("PT"))
             {
-                var timeSpan = System.Xml.XmlConvert.ToTimeSpan(timePart);
-                date = date.Date.Add(timeSpan);
+                var time = System.Xml.XmlConvert.ToTimeSpan(timePart);
+                date = date.Date.Add(time);
             }
 
             return date;

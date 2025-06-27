@@ -22,6 +22,7 @@ namespace Infrastructure.Services
             try
             {
                 await _entity.AddAsync(entity);
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
