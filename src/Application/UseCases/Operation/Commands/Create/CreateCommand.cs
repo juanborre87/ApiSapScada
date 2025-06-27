@@ -112,13 +112,24 @@ public class CreateCommandHandler(
             if (string.IsNullOrEmpty(datePart))
                 return null;
 
-            // Convertir directamente la cadena de milisegundos
-            if (!long.TryParse(datePart, out var millis))
+            DateTime date;
+
+            // Si viene como milisegundos
+            if (long.TryParse(datePart, out var millis))
+            {
+                date = DateTimeOffset.FromUnixTimeMilliseconds(millis).DateTime;
+            }
+            // Si viene como fecha ISO: "2025-01-29T00:00:00Z"
+            else if (DateTime.TryParse(datePart, null, DateTimeStyles.AdjustToUniversal, out var parsedDate))
+            {
+                date = parsedDate;
+            }
+            else
+            {
                 return null;
+            }
 
-            var date = DateTimeOffset.FromUnixTimeMilliseconds(millis).DateTime;
-
-            // Si hay hora tipo PT00H00M00S, la sumamos al día base
+            // Agregar hora si viene como "PT15H56M42S"
             if (!string.IsNullOrEmpty(timePart) && timePart.StartsWith("PT"))
             {
                 var time = System.Xml.XmlConvert.ToTimeSpan(timePart);
