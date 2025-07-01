@@ -20,6 +20,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sql", "sql", "{22870CBA-B136-4C52-AEF4-A35F33576A7A}"
 	ProjectSection(SolutionItems) = preProject
 		sql\sapscada2_schema.sql = sql\sapscada2_schema.sql
+		sql\sapscada_schema.sql = sql\sapscada_schema.sql
 	EndProjectSection
 EndProject
 Global
