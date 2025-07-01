@@ -189,11 +189,16 @@ public class CreateCommandHandler(
             string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
             var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
 
+            // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
+            var productDescription = productDescriptionDto.Results?
+                .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
+                ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
+
             // Inserta en la base de datos
             var product = new Product
             {
                 ProductCode = productDto.Product,
-                ProductDescription = productDescriptionDto.ProductDescription,
+                ProductDescription = productDescription,
                 ProductType = productDto.ProductType
             };
 
