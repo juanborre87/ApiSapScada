@@ -21,6 +21,7 @@ public class CreateCommandHandler(
     ISapService sapOrderService,
     ICommandSqlDB<ProcessOrder> processOrderCommandSqlDB,
     ICommandSqlDB<Product> productCommandSqlDB,
+    ICommandSqlDB<ProcessOrderComponent> processOrderComponentCommandSqlDB,
     IQuerySqlDB<Product> productQuerySqlDB,
     IQuerySqlDB<ProcessOrderStatus> statusQuerySqlDB) :
     IRequestHandler<CreateCommand<ProcessOrderData>, Response<CreateResponse>>
@@ -74,9 +75,35 @@ public class CreateCommandHandler(
                 StorageLocation = processOrderDto.StorageLocation,
                 UnloadingPointName = processOrderDto.UnloadingPointName,
                 TotalQuantity = float.Parse(processOrderDto.TotalQuantity, CultureInfo.InvariantCulture),
-                Status = (byte)statusId
+                Status = (byte)statusId,
+                InterfaceTimestamp = DateTime.UtcNow
+                
                 // Agrega más campos si los necesitas
             };
+
+            foreach (var component in orderComponentDto.Results)
+            {
+                var processOrderComponent = new ProcessOrderComponent
+                {
+                    ManufacturingOrder = Int64.Parse(component.ManufacturingOrder),
+                    Material = component.Material,
+                    Reservation = Int64.Parse(component.Reservation),
+                    ReservationItem = component.ReservationItem,
+                    MatlCompRequirementDateTime = ParseSapDateTime(component.MatlCompRequirementDate, component.MatlCompRequirementTime),
+                    StorageLocation = component.StorageLocation,
+                    Batch = component.Batch,
+                    GoodsMovementType = component.GoodsMovementType,
+                    GoodsRecipientName = component.GoodsRecipientName,
+                    UnloadingPointName = component.UnloadingPointName,
+                    EntryUnit = component.EntryUnit,
+                    EntryUnitIsocode = component.EntryUnitISOCode,
+                    EntryUnitSapcode = component.EntryUnitSAPCode,
+                    GoodsMovementEntryQty = float.Parse(component.GoodsMovementEntryQty),
+                    LastChangeDateTime = ParseDateTime(component.LastChangeDateTime),
+                };
+
+                await processOrderComponentCommandSqlDB.AddAsync(processOrderComponent);
+            }
 
             await processOrderCommandSqlDB.AddAsync(processOrder);
 
@@ -97,7 +124,7 @@ public class CreateCommandHandler(
 
     }
 
-    private DateTime? ParseDateTime(string? value)
+    private static DateTime? ParseDateTime(string? value)
     {
         if (DateTime.TryParseExact(value, "yyyyMMddHHmmss", null, System.Globalization.DateTimeStyles.None, out var result))
             return result;
@@ -108,7 +135,7 @@ public class CreateCommandHandler(
         return null;
     }
 
-    private DateTime? ParseSapDateTime(string? datePart, string? timePart)
+    private static DateTime? ParseSapDateTime(string? datePart, string? timePart)
     {
         try
         {
