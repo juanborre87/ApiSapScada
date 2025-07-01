@@ -29,8 +29,8 @@ public class CreateCommandHandler(
     {
         try
         {
-            var material = request.EventPayload;
-            if (material == null)
+            var eventPayload = request.EventPayload;
+            if (eventPayload == null)
             {
                 return new Response<CreateResponse>
                 {
@@ -39,33 +39,20 @@ public class CreateCommandHandler(
                 };
             }
 
-            string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{material.Id}')?$format=json";
+            string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Id}')?$format=json";
             var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
+            await EnsureProductsExistAsync([processOrderDto.Material]);
 
-            string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{material.Id}')/to_ProcessOrderComponent?$format=json";
+            string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Id}')/to_ProcessOrderComponent?$format=json";
             var orderComponentDto = await sapOrderService.GetFromSapAsync<OrderComponentDto>(orderComponentUrl);
-
-            var productExist = productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductId == Convert.ToInt64(material.Id));
-            if (productExist == null)
-            {
-                string productUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/sap/api_product_srv/A_Product('{material.Id}')?$format=json";
-                var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
-
-                string productDescritionUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/sap/api_product_srv/A_Product('{material.Id}')/to_Description?$format=json";
-                var productDescrition = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(productDescritionUrl);
-            }
+            List<string> materials = GetMaterialsFromOrderComponentDto(orderComponentDto);
+            await EnsureProductsExistAsync(materials);
 
             var statusId = await GetStatusIdAsync(processOrderDto);
 
-            var product = new Product
-            {
-                ProductId = Convert.ToInt64(material.Id),
-                ProductCode = processOrderDto.Material,
-            };
-
             var processOrder = new ProcessOrder
             {
-                ManufacturingOrder = product.ProductId,
+                ManufacturingOrder = Int64.Parse(processOrderDto.ManufacturingOrder),
                 ManufacturingOrderCategory = processOrderDto.ManufacturingOrderCategory,
                 ManufacturingOrderType = processOrderDto.ManufacturingOrderType,
                 GoodsRecipientName = processOrderDto.GoodsRecipientName,
@@ -91,8 +78,6 @@ public class CreateCommandHandler(
                 // Agrega más campos si los necesitas
             };
 
-            // Guardar en la base de datos
-            await productCommandSqlDB.AddAsync(product);
             await processOrderCommandSqlDB.AddAsync(processOrder);
 
             return new Response<CreateResponse>
@@ -163,16 +148,16 @@ public class CreateCommandHandler(
         }
     }
 
-    private async Task<int?> GetStatusIdAsync(ProcessOrderDto d)
+    private async Task<int?> GetStatusIdAsync(ProcessOrderDto dto)
     {
         var statusChecks = new List<(string Value, string Description)>
         {
-            (d.OrderIsClosed, "closed"),
-            (d.OrderIsDeleted, "cancelled"),
-            (d.OrderIsLocked, "locked"),
-            (d.OrderIsDelivered, "delivered"),
-            (d.OrderIsReleased, "released"),
-            (d.OrderIsCreated, "created")
+            (dto.OrderIsClosed, "closed"),
+            (dto.OrderIsDeleted, "cancelled"),
+            (dto.OrderIsLocked, "locked"),
+            (dto.OrderIsDelivered, "delivered"),
+            (dto.OrderIsReleased, "released"),
+            (dto.OrderIsCreated, "created")
         };
 
         foreach (var (value, description) in statusChecks)
@@ -186,6 +171,48 @@ public class CreateCommandHandler(
         }
 
         return null;
+    }
+
+    public async Task EnsureProductsExistAsync(IEnumerable<string> materials)
+    {
+        foreach (var material in materials)
+        {
+            var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material);
+            if (productExist != null)
+                continue;
+
+            // Consulta a SAP
+            string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
+            string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
+            var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
+
+            string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
+            var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
+
+            // Inserta en la base de datos
+            var product = new Product
+            {
+                ProductCode = productDto.Product,
+                ProductDescription = productDescriptionDto.ProductDescription,
+                ProductType = productDto.ProductType
+            };
+
+            await productCommandSqlDB.AddAsync(product);
+        }
+    }
+
+    public static List<string> GetMaterialsFromOrderComponentDto(OrderComponentDto dto)
+    {
+        if (dto?.Results == null || dto.Results.Count == 0)
+            return [];
+
+        var materials = dto.Results
+            .Select(r => r.Material)
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Distinct()
+            .ToList();
+
+        return materials;
     }
 
 }

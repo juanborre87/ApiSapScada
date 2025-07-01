@@ -2,10 +2,11 @@
 
 namespace Domain.Dtos
 {
+
     public class OrderComponentDto
     {
         [JsonProperty("results")]
-        public List<OrderComponentDto> Results { get; set; }
+        public List<OrderComponentResultDto> Results { get; set; }
     }
 
     public class OrderComponentResultDto
