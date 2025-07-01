@@ -78,14 +78,15 @@ public class CreateCommandHandler(
                 Status = (byte)statusId,
                 InterfaceTimestamp = DateTime.UtcNow
                 
-                // Agrega más campos si los necesitas
             };
+
+            await processOrderCommandSqlDB.AddAsync(processOrder);
 
             foreach (var component in orderComponentDto.Results)
             {
                 var processOrderComponent = new ProcessOrderComponent
                 {
-                    ManufacturingOrder = Int64.Parse(component.ManufacturingOrder),
+                    ManufacturingOrder = Int64.Parse(processOrderDto.ManufacturingOrder),
                     Material = component.Material,
                     Reservation = Int64.Parse(component.Reservation),
                     ReservationItem = component.ReservationItem,
@@ -104,8 +105,6 @@ public class CreateCommandHandler(
 
                 await processOrderComponentCommandSqlDB.AddAsync(processOrderComponent);
             }
-
-            await processOrderCommandSqlDB.AddAsync(processOrder);
 
             return new Response<CreateResponse>
             {
@@ -191,7 +190,7 @@ public class CreateCommandHandler(
         {
             if (value == "X")
             {
-                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.StatusDescription == description);
+                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.StatusDescription == description, false);
 
                 return status?.StatusId;
             }
@@ -204,7 +203,7 @@ public class CreateCommandHandler(
     {
         foreach (var material in materials)
         {
-            var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material);
+            var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material, false);
             if (productExist != null)
                 continue;
 
