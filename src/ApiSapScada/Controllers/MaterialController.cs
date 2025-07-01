@@ -1,6 +1,7 @@
 ﻿using Application.UseCases.Operation.Commands.Create;
 using Application.UseCases.Operation.Commands.Update;
 using Domain.Models;
+using Domain.Models.Payload;
 using HostWorker.Models;
 using Microsoft.AspNetCore.Mvc;
 

@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations;
 
-public class OrderConfirmationStatusConfiguration : IEntityTypeConfiguration<OrderConfirmationStatus>
+public class CommStatusConfiguration : IEntityTypeConfiguration<CommStatus>
 {
-    public void Configure(EntityTypeBuilder<OrderConfirmationStatus> entity)
+    public void Configure(EntityTypeBuilder<CommStatus> entity)
     {
         entity.HasKey(e => e.StatusId);
 
-        entity.ToTable("OrderConfirmationStatus");
+        entity.ToTable("CommStatus");
 
         entity.Property(e => e.StatusDescription)
             .IsRequired()

@@ -14,6 +14,7 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
 
         entity.Property(e => e.ManufacturingOrder).ValueGeneratedNever();
         entity.Property(e => e.GoodsRecipientName).HasMaxLength(50);
+        entity.Property(e => e.InterfaceTimestamp).HasColumnType("datetime");
         entity.Property(e => e.LastChangeDateTime).HasColumnType("datetime");
         entity.Property(e => e.ManufacturingOrderCategory).HasMaxLength(50);
         entity.Property(e => e.ManufacturingOrderType).HasMaxLength(50);
@@ -37,6 +38,11 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
         entity.Property(e => e.ProductionVersion).HasMaxLength(50);
         entity.Property(e => e.StorageLocation).HasMaxLength(50);
         entity.Property(e => e.UnloadingPointName).HasMaxLength(50);
+
+        entity.HasOne(d => d.CommStatusNavigation).WithMany(p => p.ProcessOrders)
+            .HasForeignKey(d => d.CommStatus)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("FK_ProcessOrder_CommStatus");
 
         entity.HasOne(d => d.MaterialNavigation).WithMany(p => p.ProcessOrders)
             .HasForeignKey(d => d.Material)

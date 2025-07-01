@@ -19,6 +19,7 @@ public class ProcessOrderConfirmationMaterialMovementConfiguration : IEntityType
             .HasMaxLength(50)
             .HasColumnName("EntryUnitSAPCode");
         entity.Property(e => e.GoodsMovementDateTime).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceTimestamp).HasColumnType("datetime");
 
         entity.HasOne(d => d.ProcessOrderComponent).WithMany(p => p.ProcessOrderConfirmationMaterialMovements)
             .HasForeignKey(d => d.ProcessOrderComponentId)

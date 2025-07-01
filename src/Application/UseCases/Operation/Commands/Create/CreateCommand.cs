@@ -1,10 +1,11 @@
 ﻿using Application.Interfaces;
+using Domain.Dtos;
 using Domain.Entities;
 using Domain.Models;
+using Domain.Models.Payload;
 using HostWorker.Models;
 using MediatR;
 using Microsoft.Extensions.Configuration;
-using System.Drawing;
 using System.Globalization;
 using System.Net;
 
@@ -17,13 +18,14 @@ public class CreateCommand<T> : IRequest<Response<CreateResponse>>
 
 public class CreateCommandHandler(
     IConfiguration configuration,
-    ISapOrderService sapOrderService,
+    ISapService sapOrderService,
     ICommandSqlDB<ProcessOrder> processOrderCommandSqlDB,
     ICommandSqlDB<Product> productCommandSqlDB,
+    IQuerySqlDB<Product> productQuerySqlDB,
     IQuerySqlDB<ProcessOrderStatus> statusQuerySqlDB) :
-    IRequestHandler<CreateCommand<MaterialData>, Response<CreateResponse>>
+    IRequestHandler<CreateCommand<ProcessOrderData>, Response<CreateResponse>>
 {
-    public async Task<Response<CreateResponse>> Handle(CreateCommand<MaterialData> request, CancellationToken cancellationToken)
+    public async Task<Response<CreateResponse>> Handle(CreateCommand<ProcessOrderData> request, CancellationToken cancellationToken)
     {
         try
         {
@@ -37,38 +39,54 @@ public class CreateCommandHandler(
                 };
             }
 
-            var orderDto = await sapOrderService.GetOrderByIdAsync(material.Id);
-            var statusId = await GetStatusIdAsync(orderDto);
+            string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{material.Id}')?$format=json";
+            var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
+
+            string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{material.Id}')/to_ProcessOrderComponent?$format=json";
+            var orderComponentDto = await sapOrderService.GetFromSapAsync<OrderComponentDto>(orderComponentUrl);
+
+            var productExist = productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductId == Convert.ToInt64(material.Id));
+            if (productExist == null)
+            {
+                string productUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/sap/api_product_srv/A_Product('{material.Id}')?$format=json";
+                var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
+
+                string productDescritionUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/sap/api_product_srv/A_Product('{material.Id}')/to_Description?$format=json";
+                var productDescrition = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(productDescritionUrl);
+            }
+
+            var statusId = await GetStatusIdAsync(processOrderDto);
+
             var product = new Product
             {
                 ProductId = Convert.ToInt64(material.Id),
-                ProductName = orderDto.Material,
+                ProductCode = processOrderDto.Material,
             };
 
             var processOrder = new ProcessOrder
             {
                 ManufacturingOrder = product.ProductId,
-                ManufacturingOrderCategory = orderDto.ManufacturingOrderCategory,
-                ManufacturingOrderType = orderDto.ManufacturingOrderType,
-                GoodsRecipientName = orderDto.GoodsRecipientName,
-                LastChangeDateTime = ParseDateTime(orderDto.LastChangeDateTime),
-                Material = orderDto.Material,
-                MfgOrderActualReleaseDateTime = ParseDateTime(orderDto.MfgOrderActualReleaseDate),
-                MfgOrderCreationDateTime = ParseSapDateTime(orderDto.MfgOrderCreationDate, orderDto.MfgOrderCreationTime),
-                MfgOrderPlannedEndDateTime = ParseSapDateTime(orderDto.MfgOrderPlannedEndDate, orderDto.MfgOrderPlannedEndTime),
-                MfgOrderPlannedStartDateTime = ParseSapDateTime(orderDto.MfgOrderPlannedStartDate, orderDto.MfgOrderPlannedStartTime),
-                MfgOrderScheduledEndDateTime = ParseSapDateTime(orderDto.MfgOrderScheduledEndDate, orderDto.MfgOrderScheduledEndTime),
-                MfgOrderScheduledStartDateTime = ParseSapDateTime(orderDto.MfgOrderScheduledStartDate, orderDto.MfgOrderScheduledStartTime),
-                Plant = orderDto.Plant,
-                ProductionPlant = orderDto.ProductionPlant,
-                ProductionSupervisor = orderDto.ProductionSupervisor,
-                ProductionUnit = orderDto.ProductionUnit,
-                ProductionUnitIsocode = orderDto.ProductionUnitISOCode,
-                ProductionUnitSapcode = orderDto.ProductionUnitSAPCode,
-                ProductionVersion = orderDto.ProductionVersion,
-                StorageLocation = orderDto.StorageLocation,
-                UnloadingPointName = orderDto.UnloadingPointName,
-                TotalQuantity = float.Parse(orderDto.TotalQuantity, CultureInfo.InvariantCulture),
+                ManufacturingOrderCategory = processOrderDto.ManufacturingOrderCategory,
+                ManufacturingOrderType = processOrderDto.ManufacturingOrderType,
+                GoodsRecipientName = processOrderDto.GoodsRecipientName,
+                LastChangeDateTime = ParseDateTime(processOrderDto.LastChangeDateTime),
+                Material = processOrderDto.Material,
+                MfgOrderActualReleaseDateTime = ParseDateTime(processOrderDto.MfgOrderActualReleaseDate),
+                MfgOrderCreationDateTime = ParseSapDateTime(processOrderDto.MfgOrderCreationDate, processOrderDto.MfgOrderCreationTime),
+                MfgOrderPlannedEndDateTime = ParseSapDateTime(processOrderDto.MfgOrderPlannedEndDate, processOrderDto.MfgOrderPlannedEndTime),
+                MfgOrderPlannedStartDateTime = ParseSapDateTime(processOrderDto.MfgOrderPlannedStartDate, processOrderDto.MfgOrderPlannedStartTime),
+                MfgOrderScheduledEndDateTime = ParseSapDateTime(processOrderDto.MfgOrderScheduledEndDate, processOrderDto.MfgOrderScheduledEndTime),
+                MfgOrderScheduledStartDateTime = ParseSapDateTime(processOrderDto.MfgOrderScheduledStartDate, processOrderDto.MfgOrderScheduledStartTime),
+                Plant = processOrderDto.Plant,
+                ProductionPlant = processOrderDto.ProductionPlant,
+                ProductionSupervisor = processOrderDto.ProductionSupervisor,
+                ProductionUnit = processOrderDto.ProductionUnit,
+                ProductionUnitIsocode = processOrderDto.ProductionUnitISOCode,
+                ProductionUnitSapcode = processOrderDto.ProductionUnitSAPCode,
+                ProductionVersion = processOrderDto.ProductionVersion,
+                StorageLocation = processOrderDto.StorageLocation,
+                UnloadingPointName = processOrderDto.UnloadingPointName,
+                TotalQuantity = float.Parse(processOrderDto.TotalQuantity, CultureInfo.InvariantCulture),
                 Status = (byte)statusId
                 // Agrega más campos si los necesitas
             };
@@ -145,7 +163,7 @@ public class CreateCommandHandler(
         }
     }
 
-    private async Task<int?> GetStatusIdAsync(OrderDto d)
+    private async Task<int?> GetStatusIdAsync(ProcessOrderDto d)
     {
         var statusChecks = new List<(string Value, string Description)>
         {

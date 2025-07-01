@@ -1,6 +1,6 @@
 ﻿using Application.Interfaces;
 using Domain.Entities;
-using Domain.Models;
+using Domain.Models.Payload;
 using HostWorker.Models;
 using MediatR;
 using System.Net;
@@ -12,9 +12,7 @@ public class UpdateCommand<T> : IRequest<Response<UpdateResponse>>
     public EventPayload<T> EventPayload { get; set; }
 }
 
-public class UpdateCommandHandler<T>(
-    IQuerySqlDB<OrderConfirmationStatus> solicitudPagoQuery,
-    ICommandSqlDB<OrderConfirmationStatus> solicitudPagoCommand) :
+public class UpdateCommandHandler<T>() :
     IRequestHandler<UpdateCommand<T>, Response<UpdateResponse>>
 {
     public async Task<Response<UpdateResponse>> Handle(UpdateCommand<T> request, CancellationToken cancellationToken)

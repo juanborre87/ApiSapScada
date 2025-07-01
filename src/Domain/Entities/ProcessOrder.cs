@@ -56,6 +56,12 @@ public partial class ProcessOrder
 
     public byte? Status { get; set; }
 
+    public byte CommStatus { get; set; }
+
+    public DateTime? InterfaceTimestamp { get; set; }
+
+    public virtual CommStatus CommStatusNavigation { get; set; }
+
     public virtual Product MaterialNavigation { get; set; }
 
     public virtual ICollection<ProcessOrderComponent> ProcessOrderComponents { get; set; } = [];

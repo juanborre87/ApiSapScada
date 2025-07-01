@@ -14,8 +14,7 @@ namespace Infrastructure.Persistence
             : base(options)
         {
         }
-
-        public virtual DbSet<OrderConfirmationStatus> OrderConfirmationStatuses { get; set; }
+        public virtual DbSet<CommStatus> CommStatuses { get; set; }
 
         public virtual DbSet<ProcessOrder> ProcessOrders { get; set; }
 

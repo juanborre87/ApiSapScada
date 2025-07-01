@@ -8,13 +8,14 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> entity)
     {
-        entity.HasKey(e => e.ProductName);
+        entity.HasKey(e => e.ProductCode);
 
         entity.ToTable("Product");
 
-        entity.Property(e => e.ProductName)
+        entity.Property(e => e.ProductCode)
             .HasMaxLength(50)
             .HasColumnName("Product");
         entity.Property(e => e.ProductDescription).HasMaxLength(255);
+        entity.Property(e => e.ProductType).HasMaxLength(100);
     }
 }

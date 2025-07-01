@@ -2,7 +2,7 @@
 
 namespace Domain.Models
 {
-    public class OrderDto
+    public class ProcessOrderDto
     {
         [JsonProperty("ManufacturingOrder")]
         public string ManufacturingOrder { get; set; }

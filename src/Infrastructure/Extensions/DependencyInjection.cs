@@ -14,8 +14,8 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(
             options => options.UseSqlServer(configuration.GetConnectionString("SapScada")),
             ServiceLifetime.Transient);
-        services.AddHttpClient<SapOrderService>();
-        services.AddTransient<ISapOrderService, SapOrderService>();
+        services.AddHttpClient<SapService>();
+        services.AddTransient<ISapService, SapService>();
 
         //services.AddTransient<ICommandSqlDB<SolicitudPagoEntity>, CommandSqlDB<SolicitudPagoEntity>>();
         //services.AddTransient<IQuerySqlDB<SolicitudPagoEntity>, QuerySqlDB<SolicitudPagoEntity>>();
