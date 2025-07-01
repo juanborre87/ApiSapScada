@@ -8,9 +8,10 @@ public class ProcessOrderConfirmationMaterialMovementConfiguration : IEntityType
 {
     public void Configure(EntityTypeBuilder<ProcessOrderConfirmationMaterialMovement> entity)
     {
+        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC0780D7C9BB");
+
         entity.ToTable("ProcessOrderConfirmationMaterialMovement");
 
-        entity.Property(e => e.ProcessOrderConfirmationMaterialMovementId).ValueGeneratedNever();
         entity.Property(e => e.EntryUnit).HasMaxLength(50);
         entity.Property(e => e.EntryUnitIsocode)
             .HasMaxLength(50)

@@ -53,7 +53,7 @@ public class CreateCommandHandler(
 
             var processOrder = new ProcessOrder
             {
-                ManufacturingOrder = Int64.Parse(processOrderDto.ManufacturingOrder),
+                ManufacturingOrder = processOrderDto.ManufacturingOrder,
                 ManufacturingOrderCategory = processOrderDto.ManufacturingOrderCategory,
                 ManufacturingOrderType = processOrderDto.ManufacturingOrderType,
                 GoodsRecipientName = processOrderDto.GoodsRecipientName,
@@ -86,9 +86,9 @@ public class CreateCommandHandler(
             {
                 var processOrderComponent = new ProcessOrderComponent
                 {
-                    ManufacturingOrder = Int64.Parse(processOrderDto.ManufacturingOrder),
+                    ManufacturingOrder = processOrderDto.ManufacturingOrder,
                     Material = component.Material,
-                    Reservation = Int64.Parse(component.Reservation),
+                    Reservation = component.Reservation,
                     ReservationItem = component.ReservationItem,
                     MatlCompRequirementDateTime = ParseSapDateTime(component.MatlCompRequirementDate, component.MatlCompRequirementTime),
                     StorageLocation = component.StorageLocation,
@@ -190,9 +190,9 @@ public class CreateCommandHandler(
         {
             if (value == "X")
             {
-                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.StatusDescription == description, false);
+                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.Description == description, false);
 
-                return status?.StatusId;
+                return status?.Id;
             }
         }
 

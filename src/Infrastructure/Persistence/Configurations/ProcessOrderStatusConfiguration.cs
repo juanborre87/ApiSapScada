@@ -8,11 +8,11 @@ public class ProcessOrderStatusConfiguration : IEntityTypeConfiguration<ProcessO
 {
     public void Configure(EntityTypeBuilder<ProcessOrderStatus> entity)
     {
-        entity.HasKey(e => e.StatusId);
+        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC07FCF7F8E4");
 
         entity.ToTable("ProcessOrderStatus");
 
-        entity.Property(e => e.StatusDescription)
+        entity.Property(e => e.Description)
             .IsRequired()
             .HasMaxLength(50);
     }

@@ -2,13 +2,13 @@
 
 public partial class ProcessOrderComponent
 {
-    public long ProcessOrderComponentId { get; set; }
+    public long Id { get; set; }
 
-    public long ManufacturingOrder { get; set; }
+    public string ManufacturingOrder { get; set; }
 
     public string Material { get; set; }
 
-    public long? Reservation { get; set; }
+    public string Reservation { get; set; }
 
     public string ReservationItem { get; set; }
 
@@ -38,5 +38,5 @@ public partial class ProcessOrderComponent
 
     public virtual Product MaterialNavigation { get; set; }
 
-    public virtual ICollection<ProcessOrderConfirmationMaterialMovement> ProcessOrderConfirmationMaterialMovements { get; set; } = [];
+    public virtual ICollection<ProcessOrderConfirmationMaterialMovement> ProcessOrderConfirmationMaterialMovements { get; set; } = new List<ProcessOrderConfirmationMaterialMovement>();
 }

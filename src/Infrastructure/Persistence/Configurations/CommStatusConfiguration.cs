@@ -8,11 +8,11 @@ public class CommStatusConfiguration : IEntityTypeConfiguration<CommStatus>
 {
     public void Configure(EntityTypeBuilder<CommStatus> entity)
     {
-        entity.HasKey(e => e.StatusId);
+        entity.HasKey(e => e.Id).HasName("PK__CommStat__3214EC079C5F650D");
 
         entity.ToTable("CommStatus");
 
-        entity.Property(e => e.StatusDescription)
+        entity.Property(e => e.Description)
             .IsRequired()
             .HasMaxLength(50);
     }

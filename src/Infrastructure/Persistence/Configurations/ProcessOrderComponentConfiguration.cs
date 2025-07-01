@@ -9,9 +9,10 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
 {
     public void Configure(EntityTypeBuilder<ProcessOrderComponent> entity)
     {
+        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC0723F37DD9");
+
         entity.ToTable("ProcessOrderComponent");
 
-        entity.Property(e => e.ProcessOrderComponentId).ValueGeneratedNever();
         entity.Property(e => e.Batch).HasMaxLength(50);
         entity.Property(e => e.EntryUnit).HasMaxLength(50);
         entity.Property(e => e.EntryUnitIsocode)
@@ -23,13 +24,18 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
         entity.Property(e => e.GoodsMovementType).HasMaxLength(50);
         entity.Property(e => e.GoodsRecipientName).HasMaxLength(50);
         entity.Property(e => e.LastChangeDateTime).HasColumnType("datetime");
+        entity.Property(e => e.ManufacturingOrder)
+            .IsRequired()
+            .HasMaxLength(50);
         entity.Property(e => e.Material).HasMaxLength(50);
         entity.Property(e => e.MatlCompRequirementDateTime).HasColumnType("datetime");
+        entity.Property(e => e.Reservation).HasMaxLength(50);
         entity.Property(e => e.ReservationItem).HasMaxLength(50);
         entity.Property(e => e.StorageLocation).HasMaxLength(50);
         entity.Property(e => e.UnloadingPointName).HasMaxLength(50);
 
         entity.HasOne(d => d.ManufacturingOrderNavigation).WithMany(p => p.ProcessOrderComponents)
+            .HasPrincipalKey(p => p.ManufacturingOrder)
             .HasForeignKey(d => d.ManufacturingOrder)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_ProcessOrderComponent_ProcessOrder");

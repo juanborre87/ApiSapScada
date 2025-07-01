@@ -2,7 +2,7 @@
 
 public partial class ProcessOrderConfirmationMaterialMovement
 {
-    public long ProcessOrderConfirmationMaterialMovementId { get; set; }
+    public long Id { get; set; }
 
     public long ProcessOrderConfirmationId { get; set; }
 

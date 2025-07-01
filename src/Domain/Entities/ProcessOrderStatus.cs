@@ -2,9 +2,9 @@
 
 public partial class ProcessOrderStatus
 {
-    public byte StatusId { get; set; }
+    public byte Id { get; set; }
 
-    public string StatusDescription { get; set; }
+    public string Description { get; set; }
 
-    public virtual ICollection<ProcessOrder> ProcessOrders { get; set; } = [];
+    public virtual ICollection<ProcessOrder> ProcessOrders { get; set; } = new List<ProcessOrder>();
 }

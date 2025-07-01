@@ -2,7 +2,7 @@
 
 public partial class Product
 {
-    public long ProductId { get; set; }
+    public long Id { get; set; }
 
     public string ProductCode { get; set; }
 
@@ -10,7 +10,7 @@ public partial class Product
 
     public string ProductType { get; set; }
 
-    public virtual ICollection<ProcessOrderComponent> ProcessOrderComponents { get; set; } = [];
+    public virtual ICollection<ProcessOrderComponent> ProcessOrderComponents { get; set; } = new List<ProcessOrderComponent>();
 
-    public virtual ICollection<ProcessOrder> ProcessOrders { get; set; } = [];
+    public virtual ICollection<ProcessOrder> ProcessOrders { get; set; } = new List<ProcessOrder>();
 }
