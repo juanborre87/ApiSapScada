@@ -76,7 +76,7 @@ public class CreateCommandHandler(
                 UnloadingPointName = processOrderDto.UnloadingPointName,
                 TotalQuantity = float.Parse(processOrderDto.TotalQuantity, CultureInfo.InvariantCulture),
                 Status = (byte)statusId,
-                InterfaceTimestamp = DateTime.UtcNow
+                InterfaceTimestamp = DateTime.Now
                 
             };
 
@@ -99,7 +99,7 @@ public class CreateCommandHandler(
                     EntryUnit = component.EntryUnit,
                     EntryUnitIsocode = component.EntryUnitISOCode,
                     EntryUnitSapcode = component.EntryUnitSAPCode,
-                    GoodsMovementEntryQty = float.Parse(component.GoodsMovementEntryQty),
+                    GoodsMovementEntryQty = float.Parse(component.GoodsMovementEntryQty, CultureInfo.InvariantCulture),
                     LastChangeDateTime = ParseDateTime(component.LastChangeDateTime),
                 };
 
