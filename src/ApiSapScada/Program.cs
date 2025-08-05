@@ -29,7 +29,7 @@ app.UseCors(builder =>
     .AllowAnyHeader();
 });
 
-app.UseMiddleware<AuthenticationMiddleware>();
+//app.UseMiddleware<AuthenticationMiddleware>();
 
 app.UseHttpsRedirection();
 
