@@ -16,9 +16,9 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.FirstOrDefaultAsync(filterExpression) :
                     await _entity.AsNoTracking().FirstOrDefaultAsync(filterExpression);
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
         }
 
@@ -30,9 +30,9 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.Include(navigationPropertyPath).FirstOrDefaultAsync(filter) :
                     await _entity.Include(navigationPropertyPath).AsNoTracking().FirstOrDefaultAsync(filter);
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
         }
 
@@ -44,9 +44,9 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.Where(filterExpression).ToListAsync() :
                     await _entity.AsNoTracking().Where(filterExpression).ToListAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
         }
 
@@ -58,9 +58,9 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.Include(navigationPropertyPath).Where(filter).ToListAsync() :
                     await _entity.Include(navigationPropertyPath).AsNoTracking().Where(filter).ToListAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
         }
 
@@ -74,9 +74,9 @@ namespace Arq.Cqrs
                     ? await _entity.Include(navigationPropertyPath).ToListAsync()
                     : await _entity.Include(navigationPropertyPath).AsNoTracking().ToListAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
         }
 
@@ -90,9 +90,9 @@ namespace Arq.Cqrs
                     ? await _entity.ToListAsync()
                     : await _entity.AsNoTracking().ToListAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(ex.Message);
             }
         }
 
