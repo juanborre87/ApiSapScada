@@ -34,13 +34,15 @@ public class CreateCommandHandler(
         var eventPayload = request.EventPayload;
         if (eventPayload == null)
         {
+            await logger.LogInfoAsync("El request es inválido", "Metodo: CreateCommandHandler");
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                Content = new CreateResponse { Result = false }
+                Content = new CreateResponse { Result = false, Message =  "El request es inválido"}
             };
         }
 
+        await logger.LogInfoAsync("Inicio de creación de una nueva orden", null);
         await uow.BeginTransactionAsync("SapScada");
 
         try
@@ -92,6 +94,8 @@ public class CreateCommandHandler(
 
             };
 
+            var messsageString = $"DestinoRecetaDeControl = {destinoRecetaDeControl}";
+            await logger.LogInfoAsync(messsageString, "Metodo: CreateCommandHandler");
             await processOrderCommandSqlDB.AddToTransactionAsync(processOrder, "SapScada");
 
             foreach (var component in orderComponentDto.Results)
@@ -129,7 +133,7 @@ public class CreateCommandHandler(
         catch (Exception ex)
         {
             await uow.RollbackAsync();
-            await logger.LogErrorAsync(ex.Message.ToString());
+            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: CreateCommandHandler");
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,
@@ -154,7 +158,7 @@ public class CreateCommandHandler(
         return int.TryParse(valorString, out var valor) ? valor : 0;
     }
 
-    private static DateTime? ParseDateTime(string? value)
+    private DateTime? ParseDateTime(string? value)
     {
         if (DateTime.TryParseExact(value, "yyyyMMddHHmmss", null, System.Globalization.DateTimeStyles.None, out var result))
             return result;
@@ -165,7 +169,7 @@ public class CreateCommandHandler(
         return null;
     }
 
-    private static DateTime? ParseSapDateTime(string? datePart, string? timePart)
+    private DateTime? ParseSapDateTime(string? datePart, string? timePart)
     {
         try
         {
@@ -200,31 +204,38 @@ public class CreateCommandHandler(
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            logger.LogError(ex.Message.ToString(), "Metodo: ParseSapDateTime");
             return null;
         }
     }
 
     private async Task<int?> GetStatusIdAsync(ProcessOrderDto dto)
     {
-        var statusChecks = new List<(string Value, string Description)>
+        try
         {
-            (dto.OrderIsClosed, "closed"),
-            (dto.OrderIsDeleted, "cancelled"),
-            (dto.OrderIsLocked, "locked"),
-            (dto.OrderIsDelivered, "delivered"),
-            (dto.OrderIsReleased, "released"),
-            (dto.OrderIsCreated, "created")
-        };
-
-        foreach (var (value, description) in statusChecks)
-        {
-            if (value == "X")
+            var statusChecks = new List<(string Value, string Description)>
             {
-                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.Description == description, "SapScada", false);
+                (dto.OrderIsClosed, "closed"),
+                (dto.OrderIsDeleted, "cancelled"),
+                (dto.OrderIsLocked, "locked"),
+                (dto.OrderIsDelivered, "delivered"),
+                (dto.OrderIsReleased, "released"),
+                (dto.OrderIsCreated, "created")
+            };
 
-                return status?.Id;
+            foreach (var (value, description) in statusChecks)
+            {
+                if (value == "X")
+                {
+                    var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.Description == description, "SapScada", false);
+                    return status?.Id;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetStatusIdAsync");
+            throw;
         }
 
         return null;
@@ -266,7 +277,8 @@ public class CreateCommandHandler(
         }
         catch (Exception ex) 
         {
-            await logger.LogErrorAsync("--", ex);
+            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: EnsureProductsExistAsync");
+            throw;
         }
         
     }
