@@ -16,9 +16,14 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.FirstOrDefaultAsync(filterExpression) :
                     await _entity.AsNoTracking().FirstOrDefaultAsync(filterExpression);
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
         }
 
@@ -30,9 +35,14 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.Include(navigationPropertyPath).FirstOrDefaultAsync(filter) :
                     await _entity.Include(navigationPropertyPath).AsNoTracking().FirstOrDefaultAsync(filter);
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
         }
 
@@ -44,9 +54,14 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.Where(filterExpression).ToListAsync() :
                     await _entity.AsNoTracking().Where(filterExpression).ToListAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
         }
 
@@ -58,9 +73,14 @@ namespace Arq.Cqrs
                 return tracking ? await _entity.Include(navigationPropertyPath).Where(filter).ToListAsync() :
                     await _entity.Include(navigationPropertyPath).AsNoTracking().Where(filter).ToListAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
         }
 
@@ -74,9 +94,14 @@ namespace Arq.Cqrs
                     ? await _entity.Include(navigationPropertyPath).ToListAsync()
                     : await _entity.Include(navigationPropertyPath).AsNoTracking().ToListAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
         }
 
@@ -90,9 +115,14 @@ namespace Arq.Cqrs
                     ? await _entity.ToListAsync()
                     : await _entity.AsNoTracking().ToListAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
         }
 

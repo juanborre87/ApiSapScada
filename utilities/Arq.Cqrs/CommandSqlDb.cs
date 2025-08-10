@@ -1,5 +1,6 @@
 ﻿using Arq.Core;
 using Arq.Cqrs.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Arq.Cqrs
 {
@@ -8,16 +9,21 @@ namespace Arq.Cqrs
 
         public async Task<T> AddAsync(T entity, string dbChoice)
         {
-            try 
+            try
             {
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 await ctx.Set<T>().AddAsync(entity);
                 await ctx.SaveChangesAsync();
                 return entity;
             }
-            catch (Exception ex) 
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
@@ -30,9 +36,14 @@ namespace Arq.Cqrs
                 await ctx.Set<T>().AddRangeAsync(entities);
                 await ctx.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
@@ -45,9 +56,14 @@ namespace Arq.Cqrs
                 ctx.Set<T>().Update(entity);
                 await ctx.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
@@ -60,9 +76,14 @@ namespace Arq.Cqrs
                 ctx.Set<T>().Remove(entity);
                 await ctx.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
@@ -74,9 +95,14 @@ namespace Arq.Cqrs
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 await ctx.Set<T>().AddAsync(entity);
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
@@ -88,9 +114,14 @@ namespace Arq.Cqrs
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 ctx.Set<T>().Update(entity);
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
@@ -102,9 +133,14 @@ namespace Arq.Cqrs
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 return await ctx.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException(ex.Message);
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+            catch
+            {
+                throw;
             }
 
         }
