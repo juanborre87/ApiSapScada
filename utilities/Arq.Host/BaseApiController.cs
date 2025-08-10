@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HostWorker.Models;
+namespace Arq.Host;
 
 [ApiController]
 [Route("api/[controller]")]

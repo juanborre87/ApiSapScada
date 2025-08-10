@@ -1,7 +1,5 @@
-﻿using Application.Interfaces;
-using Domain.Entities;
+﻿using Arq.Host;
 using Domain.Models.Payload;
-using HostWorker.Models;
 using MediatR;
 using System.Net;
 

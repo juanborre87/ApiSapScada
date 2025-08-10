@@ -1,9 +1,10 @@
 ﻿using Application.Interfaces;
+using Arq.Core;
+using Arq.Host;
 using Domain.Dtos;
 using Domain.Entities;
 using Domain.Models;
 using Domain.Models.Payload;
-using HostWorker.Models;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using System.Globalization;
@@ -18,37 +19,46 @@ public class CreateCommand<T> : IRequest<Response<CreateResponse>>
 
 public class CreateCommandHandler(
     IConfiguration configuration,
+    IFileLogger logger,
+    IUnitOfWork uow,
     ISapService sapOrderService,
-    ICommandSqlDB<ProcessOrder> processOrderCommandSqlDB,
-    ICommandSqlDB<Product> productCommandSqlDB,
-    ICommandSqlDB<ProcessOrderComponent> processOrderComponentCommandSqlDB,
-    IQuerySqlDB<Product> productQuerySqlDB,
-    IQuerySqlDB<ProcessOrderStatus> statusQuerySqlDB) :
+    ICommandSqlDb<ProcessOrder> processOrderCommandSqlDB,
+    ICommandSqlDb<Product> productCommandSqlDB,
+    ICommandSqlDb<ProcessOrderComponent> processOrderComponentCommandSqlDB,
+    IQuerySqlDb<Product> productQuerySqlDB,
+    IQuerySqlDb<ProcessOrderStatus> statusQuerySqlDB) :
     IRequestHandler<CreateCommand<ProcessOrderData>, Response<CreateResponse>>
 {
     public async Task<Response<CreateResponse>> Handle(CreateCommand<ProcessOrderData> request, CancellationToken cancellationToken)
     {
+        var eventPayload = request.EventPayload;
+        if (eventPayload == null)
+        {
+            return new Response<CreateResponse>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                Content = new CreateResponse { Result = false }
+            };
+        }
+
+        await uow.BeginTransactionAsync("SapScada");
+
         try
         {
-            var eventPayload = request.EventPayload;
-            if (eventPayload == null)
-            {
-                return new Response<CreateResponse>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    Content = new CreateResponse { Result = false }
-                };
-            }
 
-            string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{request.EventPayload.Data.ManufacturingOrder}')?$format=json";
+            string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
             var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
             await EnsureProductsExistAsync([processOrderDto.Material]);
 
-            string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{request.EventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
+            string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
             var orderComponentDto = await sapOrderService.GetFromSapAsync<OrderComponentDto>(orderComponentUrl);
             List<string> materials = GetMaterialsFromOrderComponentDto(orderComponentDto);
             await EnsureProductsExistAsync(materials);
 
+            string orderOperationUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderOperation?$format=json";
+            var ProcessOrderOperationDto = await sapOrderService.GetFromSapAsync<ProcessOrderOperationDto>(orderOperationUrl);
+
+            var destinoRecetaDeControl = GetDestinoRecetaDeControl(ProcessOrderOperationDto);
             var statusId = await GetStatusIdAsync(processOrderDto);
 
             var processOrder = new ProcessOrder
@@ -76,11 +86,13 @@ public class CreateCommandHandler(
                 UnloadingPointName = processOrderDto.UnloadingPointName,
                 TotalQuantity = float.Parse(processOrderDto.TotalQuantity, CultureInfo.InvariantCulture),
                 Status = (byte)statusId,
-                InterfaceTimestamp = DateTime.Now
-                
+                InterfaceTimestamp = DateTime.Now,
+                CommStatus = 1,
+                DestinoRecetaDeControl = destinoRecetaDeControl
+
             };
 
-            await processOrderCommandSqlDB.AddAsync(processOrder);
+            await processOrderCommandSqlDB.AddToTransactionAsync(processOrder, "SapScada");
 
             foreach (var component in orderComponentDto.Results)
             {
@@ -103,8 +115,10 @@ public class CreateCommandHandler(
                     LastChangeDateTime = ParseDateTime(component.LastChangeDateTime),
                 };
 
-                await processOrderComponentCommandSqlDB.AddAsync(processOrderComponent);
+                await processOrderComponentCommandSqlDB.AddToTransactionAsync(processOrderComponent, "SapScada");
             }
+
+            await uow.CommitAsync();
 
             return new Response<CreateResponse>
             {
@@ -114,6 +128,8 @@ public class CreateCommandHandler(
         }
         catch (Exception ex)
         {
+            await uow.RollbackAsync();
+            await logger.LogErrorAsync("----", ex);
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,
@@ -121,6 +137,21 @@ public class CreateCommandHandler(
             };
         }
 
+    }
+
+    public int GetDestinoRecetaDeControl(ProcessOrderOperationDto dto)
+    {
+        if (dto?.Results == null || dto.Results.Count < 2)
+            return 0;
+
+        var valorString = dto.Results
+                        .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.DestinoRecetaDeControl))
+                        ?.DestinoRecetaDeControl;
+
+        if (valorString == null)
+            return 0;
+
+        return int.TryParse(valorString, out var valor) ? valor : 0;
     }
 
     private static DateTime? ParseDateTime(string? value)
@@ -190,7 +221,7 @@ public class CreateCommandHandler(
         {
             if (value == "X")
             {
-                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.Description == description, false);
+                var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.Description == description, "SapScada", false);
 
                 return status?.Id;
             }
@@ -203,7 +234,7 @@ public class CreateCommandHandler(
     {
         foreach (var material in materials)
         {
-            var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material, false);
+            var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material, "SapScada", false);
             if (productExist != null)
                 continue;
 
@@ -228,7 +259,7 @@ public class CreateCommandHandler(
                 ProductType = productDto.ProductType
             };
 
-            await productCommandSqlDB.AddAsync(product);
+            await productCommandSqlDB.AddAsync(product, "SapScada");
         }
     }
 

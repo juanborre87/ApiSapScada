@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace HostWorker.Models;
+namespace Arq.Host;
 
 public class Response<T>
 {

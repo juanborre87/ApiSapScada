@@ -11,12 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\utilities\HostWorker\HostWorker.csproj" />
+    <ProjectReference Include="..\..\utilities\Arq.Core\Arq.Core.csproj" />
+    <ProjectReference Include="..\..\utilities\Arq.Host\Arq.Host.csproj" />
     <ProjectReference Include="..\Domain\Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Interfaces\Repositories\" />
   </ItemGroup>
 
 </Project>

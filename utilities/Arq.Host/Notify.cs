@@ -1,4 +1,4 @@
-﻿namespace HostWorker.Models;
+﻿namespace Arq.Host;
 
 public class Notify
 {

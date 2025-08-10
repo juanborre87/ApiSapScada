@@ -1,4 +1,4 @@
-﻿using HostWorker.Models;
+﻿using Arq.Host;
 
 namespace Application.UseCases.Operation.Commands.Create
 {

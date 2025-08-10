@@ -60,6 +60,8 @@ public partial class ProcessOrder
 
     public byte CommStatus { get; set; }
 
+    public int DestinoRecetaDeControl { get; set; }
+
     public DateTime? InterfaceTimestamp { get; set; }
 
     public virtual CommStatus CommStatusNavigation { get; set; }

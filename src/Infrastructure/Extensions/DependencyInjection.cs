@@ -1,4 +1,7 @@
 ﻿using Application.Interfaces;
+using Arq.Core;
+using Arq.Cqrs;
+using Arq.Cqrs.Extensions;
 using Infrastructure.Persistence;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,14 +16,20 @@ public static class DependencyInjection
     {
         services.AddDbContext<ApplicationDbContext>(
             options => options.UseSqlServer(configuration.GetConnectionString("SapScada")),
-            ServiceLifetime.Transient);
+            ServiceLifetime.Scoped);
         services.AddHttpClient<SapService>();
         services.AddTransient<ISapService, SapService>();
 
         //services.AddTransient<ICommandSqlDB<SolicitudPagoEntity>, CommandSqlDB<SolicitudPagoEntity>>();
         //services.AddTransient<IQuerySqlDB<SolicitudPagoEntity>, QuerySqlDB<SolicitudPagoEntity>>();
-        services.AddTransient(typeof(ICommandSqlDB<>), typeof(CommandSqlDB<>));
-        services.AddTransient(typeof(IQuerySqlDB<>), typeof(QuerySqlDB<>));
+        services.AddCQRS(builder =>
+        {
+            builder.AddContext<ApplicationDbContext>("SapScada");
+        });
+        services.AddSingleton<IFileLogger, FileLogger>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped(typeof(ICommandSqlDb<>), typeof(CommandSqlDb<>));
+        services.AddScoped(typeof(IQuerySqlDb<>), typeof(QuerySqlDb<>));
 
         return services;
     }
