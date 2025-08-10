@@ -129,7 +129,7 @@ public class CreateCommandHandler(
         catch (Exception ex)
         {
             await uow.RollbackAsync();
-            await logger.LogErrorAsync("----", ex);
+            await logger.LogErrorAsync(ex.Message.ToString());
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,

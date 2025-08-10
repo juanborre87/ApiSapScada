@@ -31,6 +31,9 @@ namespace Infrastructure.Services
             return WriteLogAsync("ERROR", errorMessage);
         }
 
+        public Task LogErrorAsync(string message) =>
+            WriteLogAsync("WARNING", message);
+
         private async Task WriteLogAsync(string level, string message)
         {
             string logFileName = $"log_{DateTime.Now:yyyyMMdd}.txt";
