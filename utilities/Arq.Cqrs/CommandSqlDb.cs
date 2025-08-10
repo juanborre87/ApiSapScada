@@ -16,14 +16,10 @@ namespace Arq.Cqrs
                 await ctx.SaveChangesAsync();
                 return entity;
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
@@ -36,14 +32,10 @@ namespace Arq.Cqrs
                 await ctx.Set<T>().AddRangeAsync(entities);
                 await ctx.SaveChangesAsync();
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
@@ -56,14 +48,10 @@ namespace Arq.Cqrs
                 ctx.Set<T>().Update(entity);
                 await ctx.SaveChangesAsync();
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
@@ -76,14 +64,10 @@ namespace Arq.Cqrs
                 ctx.Set<T>().Remove(entity);
                 await ctx.SaveChangesAsync();
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
@@ -95,14 +79,10 @@ namespace Arq.Cqrs
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 await ctx.Set<T>().AddAsync(entity);
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
@@ -114,14 +94,10 @@ namespace Arq.Cqrs
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 ctx.Set<T>().Update(entity);
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
@@ -133,14 +109,10 @@ namespace Arq.Cqrs
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
                 return await ctx.SaveChangesAsync();
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
                 var sqlMessage = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception(sqlMessage);
-            }
-            catch
-            {
-                throw;
             }
 
         }
