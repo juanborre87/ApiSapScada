@@ -230,37 +230,45 @@ public class CreateCommandHandler(
         return null;
     }
 
-    public async Task EnsureProductsExistAsync(IEnumerable<string> materials)
+    public async Task EnsureProductsExistAsync(List<string> materials)
     {
-        foreach (var material in materials)
+        try
         {
-            var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material, "SapScada", false);
-            if (productExist != null)
-                continue;
-
-            // Consulta a SAP
-            string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
-            string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
-            var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
-
-            string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
-            var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
-
-            // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
-            var productDescription = productDescriptionDto.Results?
-                .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
-                ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
-
-            // Inserta en la base de datos
-            var product = new Product
+            foreach (var material in materials)
             {
-                ProductCode = productDto.Product,
-                ProductDescription = productDescription,
-                ProductType = productDto.ProductType
-            };
+                var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material, "SapScada", false);
+                if (productExist != null)
+                    continue;
 
-            await productCommandSqlDB.AddAsync(product, "SapScada");
+                // Consulta a SAP
+                string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
+                string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
+                var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
+
+                string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
+                var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
+
+                // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
+                var productDescription = productDescriptionDto.Results?
+                    .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
+                    ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
+
+                // Inserta en la base de datos
+                var product = new Product
+                {
+                    ProductCode = productDto.Product,
+                    ProductDescription = productDescription,
+                    ProductType = productDto.ProductType
+                };
+
+                await productCommandSqlDB.AddAsync(product, "SapScada");
+            }
         }
+        catch (Exception ex) 
+        {
+            await logger.LogErrorAsync("--", ex);
+        }
+        
     }
 
     public static List<string> GetMaterialsFromOrderComponentDto(OrderComponentDto dto)
