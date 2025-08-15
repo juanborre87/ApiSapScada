@@ -2,7 +2,7 @@
 -- Script limpio y legible para SAPSCADA Database
 -- Fecha: 2025-06-30
 -- ==============================================
-USE [SAPSCADA2]
+USE [SAPSCADA]
 GO
 
 CREATE TABLE dbo.CommStatus (
@@ -53,6 +53,7 @@ CREATE TABLE dbo.ProcessOrder (
     Status TINYINT,
     CommStatus TINYINT NOT NULL DEFAULT(0),
     InterfaceTimestamp DATETIME,
+    DestinoRecetaDeControl INT,
     CONSTRAINT FK_ProcessOrder_CommStatus 
 		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
     CONSTRAINT FK_ProcessOrder_Status 
@@ -63,6 +64,7 @@ CREATE TABLE dbo.ProcessOrder (
 
 CREATE TABLE dbo.ProcessOrderComponent (
     Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    IdGuid UNIQUEIDENTIFIER NOT NULL,
     ManufacturingOrder NVARCHAR(50) NOT NULL,
     Material NVARCHAR(50),
     Reservation NVARCHAR(50),
@@ -86,6 +88,7 @@ CREATE TABLE dbo.ProcessOrderComponent (
 
 CREATE TABLE dbo.ProcessOrderConfirmation (
     Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    IdGuid UNIQUEIDENTIFIER NOT NULL,
     OrderId NVARCHAR(50) NOT NULL,
     ConfirmationText NVARCHAR(MAX),
     FinalConfirmationType NVARCHAR(50),
@@ -104,7 +107,7 @@ CREATE TABLE dbo.ProcessOrderConfirmation (
     VarianceReasonCode NVARCHAR(50),
     Batch NVARCHAR(50),
     Expiration DATETIME,
-    SAPResponse TINYINT,
+    SAPResponse VARCHAR(MAX),
     CommStatus TINYINT NOT NULL DEFAULT(0),
     InterfaceTimestamp DATETIME,
     CONSTRAINT FK_ProcessOrderConfirmation_CommStatus 
@@ -115,8 +118,8 @@ CREATE TABLE dbo.ProcessOrderConfirmation (
 
 CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
     Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    ProcessOrderConfirmationId BIGINT NOT NULL,
-    ProcessOrderComponentId BIGINT NOT NULL,
+    ProcessOrderConfirmationIdGuid UNIQUEIDENTIFIER NOT NULL,
+    ProcessOrderComponentIdGuid UNIQUEIDENTIFIER NOT NULL,
     EntryUnit NVARCHAR(50),
     EntryUnitISOCode NVARCHAR(50),
     EntryUnitSAPCode NVARCHAR(50),
@@ -124,15 +127,16 @@ CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
     GoodsMovementDateTime DATETIME,
     InterfaceTimestamp DATETIME,
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
-		FOREIGN KEY (ProcessOrderConfirmationId) REFERENCES dbo.ProcessOrderConfirmation(Id),
+		FOREIGN KEY (ProcessOrderConfirmationIdGuid) REFERENCES dbo.ProcessOrderConfirmation(IdGuid),
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent 
-		FOREIGN KEY (ProcessOrderComponentId) REFERENCES dbo.ProcessOrderComponent(Id)
+		FOREIGN KEY (ProcessOrderComponentIdGuid) REFERENCES dbo.ProcessOrderComponent(IdGuid)
 );
 
 INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (0, N'NotReady')
 INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (1, N'ReadyToBeTransferred')
 INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (2, N'TransferredSuccessfully')
 INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (3, N'TransferredWithWarnings')
+INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (4, N'TransferCancelled')
 GO
 INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (1, N'created')
 INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (2, N'released')

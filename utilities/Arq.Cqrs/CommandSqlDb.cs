@@ -45,7 +45,14 @@ namespace Arq.Cqrs
             try
             {
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
-                ctx.Set<T>().Update(entity);
+                var entry = ctx.Entry(entity);
+
+                if (entry.State == EntityState.Detached)
+                {
+                    ctx.Set<T>().Attach(entity);
+                    entry.State = EntityState.Modified;
+                }
+
                 await ctx.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -61,6 +68,13 @@ namespace Arq.Cqrs
             try
             {
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
+                var entry = ctx.Entry(entity);
+
+                if (entry.State == EntityState.Detached)
+                {
+                    ctx.Set<T>().Attach(entity);
+                }
+
                 ctx.Set<T>().Remove(entity);
                 await ctx.SaveChangesAsync();
             }
@@ -92,7 +106,28 @@ namespace Arq.Cqrs
             try
             {
                 var ctx = dbContextProvider.GetDbContext(dbChoice);
-                ctx.Set<T>().Update(entity);
+                var entry = ctx.Entry(entity);
+
+                if (entry.State == EntityState.Detached)
+                {
+                    ctx.Set<T>().Attach(entity);
+                    entry.State = EntityState.Modified;
+                }
+            }
+            catch (Exception ex)
+            {
+                var sqlMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception(sqlMessage);
+            }
+
+        }
+
+        public async Task AddRangeToTransactionAsync(IEnumerable<T> entities, string dbChoice)
+        {
+            try
+            {
+                var ctx = dbContextProvider.GetDbContext(dbChoice);
+                await ctx.Set<T>().AddRangeAsync(entities);
             }
             catch (Exception ex)
             {

@@ -25,7 +25,7 @@ namespace Infrastructure.Services
 
         public Task LogErrorAsync(string message, Exception? ex = null, string method = null)
         {
-            var errorMessage = ex == null ? message : $"{message}{Environment.NewLine}{ex}  {method}";
+            var errorMessage = ex == null ? message : $"{message}{Environment.NewLine}{ex}";
             return WriteLogAsync("ERROR", errorMessage, method);
         }
 
@@ -37,7 +37,7 @@ namespace Infrastructure.Services
             string logFileName = $"log_{DateTime.Now:yyyyMMdd}.txt";
             string logFilePath = Path.Combine(_logDirectory, logFileName);
 
-            string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] {message}{Environment.NewLine}  {method}";
+            string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] {message}  {method}{Environment.NewLine}";
             await File.AppendAllTextAsync(logFilePath, logEntry);
         }
 
@@ -50,7 +50,7 @@ namespace Infrastructure.Services
 
         public void LogError(string message, Exception? ex = null, string method = null)
         {
-            var errorMessage = ex == null ? message : $"{message}{Environment.NewLine}{ex}  {method}";
+            var errorMessage = ex == null ? message : $"{message}{Environment.NewLine}{ex}";
             WriteLog("ERROR", errorMessage, method);
         }
 
@@ -62,7 +62,7 @@ namespace Infrastructure.Services
             string logFileName = $"log_{DateTime.Now:yyyyMMdd}.txt";
             string logFilePath = Path.Combine(_logDirectory, logFileName);
 
-            string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] {message}{Environment.NewLine}  {method}";
+            string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] {message}  {method}{Environment.NewLine}";
             File.AppendAllText(logFilePath, logEntry);
         }
     }
