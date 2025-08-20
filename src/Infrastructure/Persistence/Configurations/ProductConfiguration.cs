@@ -12,9 +12,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         entity.ToTable("Product");
 
-        entity.Property(e => e.ProductCode)
-            .HasMaxLength(50)
-            .HasColumnName("Product");
+        entity.Property(e => e.ProductCode).HasMaxLength(50);
         entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
         entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
         entity.Property(e => e.ProductDescription).HasMaxLength(255);

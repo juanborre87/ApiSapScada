@@ -66,7 +66,9 @@ public class CreateCommandHandler(
 
             var statusId = await GetStatusIdAsync(processOrderDto);
 
-            var billOfMaterialUrl = $"https://sapfioridev.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/A_BillOfMaterial?$filter=Material eq '{processOrderDto.Material}' and Plant eq '{processOrderDto.Plant}'&$format=json";
+            var billOfMaterialUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/A_BillOfMaterial" +
+                                    $"?$filter=Material eq '{processOrderDto.Material}' and Plant eq '{processOrderDto.Plant}'" +
+                                    $"&$expand=to_BillOfMaterialItem&$format=json";
             var billOfMaterialDto = await sapOrderService.GetFromSapAsync<BillOfMaterialHeaderDto>(billOfMaterialUrl);
             var billOfMaterialHeaderUUID = GetBillOfMaterialHeaderUUID(billOfMaterialDto);
 
