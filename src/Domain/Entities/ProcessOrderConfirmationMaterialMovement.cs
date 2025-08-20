@@ -2,11 +2,11 @@
 
 public partial class ProcessOrderConfirmationMaterialMovement
 {
-    public long Id { get; set; }
+    public Guid IdGuid { get; set; }
 
-    public long ProcessOrderConfirmationId { get; set; }
+    public Guid ProcessOrderConfirmationIdGuid { get; set; }
 
-    public long ProcessOrderComponentId { get; set; }
+    public Guid ProcessOrderComponentIdGuid { get; set; }
 
     public string EntryUnit { get; set; }
 
@@ -18,9 +18,11 @@ public partial class ProcessOrderConfirmationMaterialMovement
 
     public DateTime? GoodsMovementDateTime { get; set; }
 
-    public DateTime? InterfaceTimestamp { get; set; }
+    public DateTime? InterfaceCreateTimestamp { get; set; }
 
-    public virtual ProcessOrderComponent ProcessOrderComponent { get; set; }
+    public DateTime? InterfaceUpdateTimestamp { get; set; }
 
-    public virtual ProcessOrderConfirmation ProcessOrderConfirmation { get; set; }
+    public virtual ProcessOrderComponent ProcessOrderComponentId { get; set; }
+
+    public virtual ProcessOrderConfirmation ProcessOrderConfirmationId { get; set; }
 }

@@ -8,10 +8,11 @@ public class ProcessOrderConfirmationConfiguration : IEntityTypeConfiguration<Pr
 {
     public void Configure(EntityTypeBuilder<ProcessOrderConfirmation> entity)
     {
-        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC07A99D52F4");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145263B8C02");
 
         entity.ToTable("ProcessOrderConfirmation");
 
+        entity.Property(e => e.IdGuid).ValueGeneratedNever();
         entity.Property(e => e.Batch).HasMaxLength(50);
         entity.Property(e => e.ConfirmationEntryDateTime).HasColumnType("datetime");
         entity.Property(e => e.ConfirmationUnit).HasMaxLength(50);
@@ -24,14 +25,17 @@ public class ProcessOrderConfirmationConfiguration : IEntityTypeConfiguration<Pr
         entity.Property(e => e.EnteredByUser).HasMaxLength(255);
         entity.Property(e => e.Expiration).HasColumnType("datetime");
         entity.Property(e => e.FinalConfirmationType).HasMaxLength(50);
-        entity.Property(e => e.InterfaceTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
         entity.Property(e => e.OrderId)
             .IsRequired()
             .HasMaxLength(50);
         entity.Property(e => e.Personnel).HasMaxLength(50);
         entity.Property(e => e.Plant).HasMaxLength(50);
         entity.Property(e => e.PostingDate).HasColumnType("datetime");
-        entity.Property(e => e.Sapresponse).HasColumnName("SAPResponse");
+        entity.Property(e => e.Sapresponse)
+            .IsUnicode(false)
+            .HasColumnName("SAPResponse");
         entity.Property(e => e.VarianceReasonCode).HasMaxLength(50);
         entity.Property(e => e.WorkCenter).HasMaxLength(50);
 
@@ -41,7 +45,6 @@ public class ProcessOrderConfirmationConfiguration : IEntityTypeConfiguration<Pr
             .HasConstraintName("FK_ProcessOrderConfirmation_CommStatus");
 
         entity.HasOne(d => d.Order).WithMany(p => p.ProcessOrderConfirmations)
-            .HasPrincipalKey(p => p.ManufacturingOrder)
             .HasForeignKey(d => d.OrderId)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_ProcessOrderConfirmation_ProcessOrder");

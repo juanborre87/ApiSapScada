@@ -223,32 +223,6 @@ namespace Domain.Models
         [JsonProperty("WBSElementExternalID")]
         public string WBSElementExternalID { get; set; }
 
-        // Relaciones diferidas
-        [JsonProperty("to_ProcessOrderComponent")]
-        public DeferredLink To_ProcessOrderComponent { get; set; }
-
-        [JsonProperty("to_ProcessOrderItem")]
-        public DeferredLink To_ProcessOrderItem { get; set; }
-
-        [JsonProperty("to_ProcessOrderOperation")]
-        public DeferredLink To_ProcessOrderOperation { get; set; }
-
-        [JsonProperty("to_ProcessOrderStatus")]
-        public DeferredLink To_ProcessOrderStatus { get; set; }
-
-        [JsonProperty("to_ProcessProdnRsceTools")]
-        public DeferredLink To_ProcessProdnRsceTools { get; set; }
     }
 
-    public class DeferredLink
-    {
-        [JsonProperty("__deferred")]
-        public DeferredUri Deferred { get; set; }
-    }
-
-    public class DeferredUri
-    {
-        [JsonProperty("uri")]
-        public string Uri { get; set; }
-    }
 }

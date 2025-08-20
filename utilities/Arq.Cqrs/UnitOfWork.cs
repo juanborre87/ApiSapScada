@@ -3,72 +3,114 @@ using Arq.Cqrs.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Collections.Concurrent;
 
-namespace Arq.Cqrs
+namespace Arq.Cqrs;
+
+public class UnitOfWork : IUnitOfWork, IDisposable
 {
-    public class UnitOfWork : IUnitOfWork, IDisposable
+    private readonly IDbContextProvider _dbContextProvider;
+    private readonly ConcurrentDictionary<string, object> _repos = new();
+    private readonly ConcurrentDictionary<string, IDbContextTransaction> _transactions = new();
+
+    public UnitOfWork(IDbContextProvider dbContextProvider)
+        => _dbContextProvider = dbContextProvider 
+        ?? throw new ArgumentNullException(nameof(dbContextProvider));
+
+
+    public IEFCommandRepository<T> CommandRepository<T>(string dbChoice) where T : class
     {
-        private readonly IDbContextProvider _dbContextProvider;
-        private readonly Dictionary<string, IDbContextTransaction> _transactions = new();
-        private readonly ConcurrentDictionary<Type, object> _repos = new();
-
-        public UnitOfWork(IDbContextProvider dbContextProvider)
+        var key = $"CMD_{dbChoice}_{typeof(T).FullName}";
+        return (IEFCommandRepository<T>)_repos.GetOrAdd(key, _ =>
         {
-            _dbContextProvider = dbContextProvider;
-        }
+            var ctx = _dbContextProvider.GetDbContext(dbChoice);
+            return new EFCommandRepository<T>(ctx);
+        });
+    }
 
-        public async Task BeginTransactionAsync(string databaseChoice)
+    public IEFQueryRepository<T> QueryRepository<T>(string dbChoice) where T : class
+    {
+        var key = $"QRY_{dbChoice}_{typeof(T).FullName}";
+        return (IEFQueryRepository<T>)_repos.GetOrAdd(key, _ =>
         {
-            var ctx = _dbContextProvider.GetDbContext(databaseChoice);
-            if (!_transactions.ContainsKey(databaseChoice))
-            {
-                var tx = await ctx.Database.BeginTransactionAsync();
-                _transactions[databaseChoice] = tx;
-            }
-        }
+            var ctx = _dbContextProvider.GetDbContext(dbChoice);
+            return new EFQueryRepository<T>(ctx);
+        });
+    }
 
-        public async Task CommitAsync()
+    public IDapperRepository DapperRepository(string dbChoice)
+    {
+        var key = $"DAP_{dbChoice}";
+        return (IDapperRepository)_repos.GetOrAdd(key, _ =>
         {
-            foreach (var kv in _transactions)
-            {
-                var dbChoice = kv.Key;
-                var tx = kv.Value;
-                await _dbContextProvider.GetDbContext(dbChoice).SaveChangesAsync();
-                await tx.CommitAsync();
-                await tx.DisposeAsync();
-            }
-            _transactions.Clear();
-        }
+            var ctx = _dbContextProvider.GetDbContext(dbChoice);
+            return new DapperRepository(ctx);
+        });
+    }
 
-        public async Task RollbackAsync()
+
+    public async Task BeginTransactionAsync(string databaseChoice)
+    {
+        var ctx = _dbContextProvider.GetDbContext(databaseChoice);
+        if (!_transactions.ContainsKey(databaseChoice))
         {
-            foreach (var kv in _transactions)
-            {
-                var tx = kv.Value;
-                await tx.RollbackAsync();
-                await tx.DisposeAsync();
-            }
-            _transactions.Clear();
+            var tx = await ctx.Database.BeginTransactionAsync();
+            _transactions[databaseChoice] = tx;
         }
+    }
 
-        public ICommandSqlDb<T> Repository<T>() where T : class
+    public async Task CommitAsync(string dbChoice)
+    {
+        foreach (var kv in _transactions)
         {
-            var t = typeof(T);
-            if (!_repos.ContainsKey(t))
-            {
-                var repo = new CommandSqlDb<T>(_dbContextProvider);
-                _repos[t] = repo;
-            }
-            return (ICommandSqlDb<T>)_repos[t];
+            var tx = kv.Value;
+            await _dbContextProvider.GetDbContext(dbChoice).SaveChangesAsync();
+            await tx.CommitAsync();
+            await tx.DisposeAsync();
+            _dbContextProvider.DisposeScopeFor(dbChoice);
         }
+        _transactions.Clear();
+    }
 
-        public void Dispose()
+    public async Task CommitTransactionAsync()
+    {
+        foreach (var kv in _transactions)
         {
-            foreach (var kv in _transactions)
-            {
-                try { kv.Value.Dispose(); } catch { }
-            }
-            _transactions.Clear();
+            var dbChoice = kv.Key;
+            var tx = kv.Value;
 
+            var ctx = _dbContextProvider.GetDbContext(dbChoice);
+            await ctx.SaveChangesAsync();
+            await tx.CommitAsync();
+            await tx.DisposeAsync();
+            _dbContextProvider.DisposeScopeFor(dbChoice);
         }
+        _transactions.Clear();
+    }
+
+    public async Task RollbackAsync(string dbChoice)
+    {
+        foreach (var kv in _transactions)
+        {
+            var tx = kv.Value;
+            await tx.RollbackAsync();
+            await tx.DisposeAsync();
+            _dbContextProvider.DisposeScopeFor(dbChoice);
+        }
+        _transactions.Clear();
+    }
+
+    public void Dispose()
+    {
+        foreach (var kv in _transactions)
+        {
+            try { kv.Value.Dispose(); } catch { }
+        }
+        _transactions.Clear();
+
+    }
+
+    public async Task<int> SaveChangesAsync(string dbChoice)
+    {
+        var ctx = _dbContextProvider.GetDbContext(dbChoice);
+        return await ctx.SaveChangesAsync();
     }
 }

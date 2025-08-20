@@ -2,7 +2,7 @@
 
 public partial class ProcessOrderComponent
 {
-    public long Id { get; set; }
+    public Guid IdGuid { get; set; }
 
     public string ManufacturingOrder { get; set; }
 
@@ -33,6 +33,10 @@ public partial class ProcessOrderComponent
     public float? GoodsMovementEntryQty { get; set; }
 
     public DateTime? LastChangeDateTime { get; set; }
+
+    public DateTime? InterfaceCreateTimestamp { get; set; }
+
+    public DateTime? InterfaceUpdateTimestamp { get; set; }
 
     public virtual ProcessOrder ManufacturingOrderNavigation { get; set; }
 

@@ -8,10 +8,11 @@ public class ProcessOrderConfirmationMaterialMovementConfiguration : IEntityType
 {
     public void Configure(EntityTypeBuilder<ProcessOrderConfirmationMaterialMovement> entity)
     {
-        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC0780D7C9BB");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145212CEBFA");
 
         entity.ToTable("ProcessOrderConfirmationMaterialMovement");
 
+        entity.Property(e => e.IdGuid).ValueGeneratedNever();
         entity.Property(e => e.EntryUnit).HasMaxLength(50);
         entity.Property(e => e.EntryUnitIsocode)
             .HasMaxLength(50)
@@ -20,15 +21,16 @@ public class ProcessOrderConfirmationMaterialMovementConfiguration : IEntityType
             .HasMaxLength(50)
             .HasColumnName("EntryUnitSAPCode");
         entity.Property(e => e.GoodsMovementDateTime).HasColumnType("datetime");
-        entity.Property(e => e.InterfaceTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
 
-        entity.HasOne(d => d.ProcessOrderComponent).WithMany(p => p.ProcessOrderConfirmationMaterialMovements)
-            .HasForeignKey(d => d.ProcessOrderComponentId)
+        entity.HasOne(d => d.ProcessOrderComponentId).WithMany(p => p.ProcessOrderConfirmationMaterialMovements)
+            .HasForeignKey(d => d.ProcessOrderComponentIdGuid)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent");
 
-        entity.HasOne(d => d.ProcessOrderConfirmation).WithMany(p => p.ProcessOrderConfirmationMaterialMovements)
-            .HasForeignKey(d => d.ProcessOrderConfirmationId)
+        entity.HasOne(d => d.ProcessOrderConfirmationId).WithMany(p => p.ProcessOrderConfirmationMaterialMovements)
+            .HasForeignKey(d => d.ProcessOrderConfirmationIdGuid)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation");
     }

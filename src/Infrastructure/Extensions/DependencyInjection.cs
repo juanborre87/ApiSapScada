@@ -28,8 +28,8 @@ public static class DependencyInjection
         });
         services.AddSingleton<IFileLogger, FileLogger>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped(typeof(ICommandSqlDb<>), typeof(CommandSqlDb<>));
-        services.AddScoped(typeof(IQuerySqlDb<>), typeof(QuerySqlDb<>));
+        services.AddScoped(typeof(IEFCommandRepository<>), typeof(EFCommandRepository<>));
+        services.AddScoped(typeof(IEFQueryRepository<>), typeof(EFQueryRepository<>));
 
         return services;
     }

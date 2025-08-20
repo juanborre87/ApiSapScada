@@ -16,6 +16,8 @@ namespace Infrastructure.Persistence
         }
         public virtual DbSet<CommStatus> CommStatuses { get; set; }
 
+        public virtual DbSet<MasterRecipe> MasterRecipes { get; set; }
+
         public virtual DbSet<ProcessOrder> ProcessOrders { get; set; }
 
         public virtual DbSet<ProcessOrderComponent> ProcessOrderComponents { get; set; }

@@ -21,13 +21,8 @@ public class CreateCommandHandler(
     IConfiguration configuration,
     IFileLogger logger,
     IUnitOfWork uow,
-    ISapService sapOrderService,
-    ICommandSqlDb<ProcessOrder> processOrderCommandSqlDB,
-    ICommandSqlDb<Product> productCommandSqlDB,
-    ICommandSqlDb<ProcessOrderComponent> processOrderComponentCommandSqlDB,
-    IQuerySqlDb<Product> productQuerySqlDB,
-    IQuerySqlDb<ProcessOrderStatus> statusQuerySqlDB) :
-    IRequestHandler<CreateCommand<ProcessOrderData>, Response<CreateResponse>>
+    ISapService sapOrderService)
+    : IRequestHandler<CreateCommand<ProcessOrderData>, Response<CreateResponse>>
 {
     public async Task<Response<CreateResponse>> Handle(CreateCommand<ProcessOrderData> request, CancellationToken cancellationToken)
     {
@@ -38,11 +33,17 @@ public class CreateCommandHandler(
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                Content = new CreateResponse { Result = false, Message =  "El request es inválido"}
+                Content = new CreateResponse { Result = false, Message = "El request es inválido" }
             };
         }
 
         await logger.LogInfoAsync("Inicio de creación de una nueva orden", null);
+
+        var processOrderCommandSqlDB = uow.CommandRepository<ProcessOrder>("SapScada");
+        var processOrderComponentCommandSqlDB = uow.CommandRepository<ProcessOrderComponent>("SapScada");
+        var productCommandSqlDB = uow.CommandRepository<Product>("SapScada");
+        var masterRecipeCommandSqlDB = uow.CommandRepository<MasterRecipe>("SapScada");
+
         await uow.BeginTransactionAsync("SapScada");
 
         try
@@ -50,18 +51,24 @@ public class CreateCommandHandler(
 
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
             var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
-            await EnsureProductsExistAsync([processOrderDto.Material]);
+            var products = await GetProductsToAddAsync([processOrderDto.Material]);
+            await productCommandSqlDB.AddRangeToTransactionAsync(products, "SapScada");
 
             string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
             var orderComponentDto = await sapOrderService.GetFromSapAsync<OrderComponentDto>(orderComponentUrl);
             List<string> materials = GetMaterialsFromOrderComponentDto(orderComponentDto);
-            await EnsureProductsExistAsync(materials);
+            products = await GetProductsToAddAsync(materials);
+            await productCommandSqlDB.AddRangeToTransactionAsync(products, "SapScada");
 
             string orderOperationUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderOperation?$format=json";
             var ProcessOrderOperationDto = await sapOrderService.GetFromSapAsync<ProcessOrderOperationDto>(orderOperationUrl);
-
             var destinoRecetaDeControl = GetDestinoRecetaDeControl(ProcessOrderOperationDto);
+
             var statusId = await GetStatusIdAsync(processOrderDto);
+
+            var billOfMaterialUrl = $"https://sapfioridev.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/A_BillOfMaterial?$filter=Material eq '{processOrderDto.Material}' and Plant eq '{processOrderDto.Plant}'&$format=json";
+            var billOfMaterialDto = await sapOrderService.GetFromSapAsync<BillOfMaterialHeaderDto>(billOfMaterialUrl);
+            var billOfMaterialHeaderUUID = GetBillOfMaterialHeaderUUID(billOfMaterialDto);
 
             var processOrder = new ProcessOrder
             {
@@ -88,10 +95,10 @@ public class CreateCommandHandler(
                 UnloadingPointName = processOrderDto.UnloadingPointName,
                 TotalQuantity = float.Parse(processOrderDto.TotalQuantity, CultureInfo.InvariantCulture),
                 Status = (byte)statusId,
-                InterfaceTimestamp = DateTime.Now,
+                InterfaceCreateTimestamp = DateTime.Now,
                 CommStatus = 1,
-                DestinoRecetaDeControl = destinoRecetaDeControl
-
+                DestinoRecetaDeControl = GetDestinoRecetaDeControl(ProcessOrderOperationDto),
+                BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID
             };
 
             var messsageString = $"DestinoRecetaDeControl = {destinoRecetaDeControl}";
@@ -102,6 +109,7 @@ public class CreateCommandHandler(
             {
                 var processOrderComponent = new ProcessOrderComponent
                 {
+                    IdGuid = Guid.NewGuid(),
                     ManufacturingOrder = processOrderDto.ManufacturingOrder,
                     Material = component.Material,
                     Reservation = component.Reservation,
@@ -117,12 +125,16 @@ public class CreateCommandHandler(
                     EntryUnitSapcode = component.EntryUnitSAPCode,
                     GoodsMovementEntryQty = float.Parse(component.GoodsMovementEntryQty, CultureInfo.InvariantCulture),
                     LastChangeDateTime = ParseDateTime(component.LastChangeDateTime),
+                    InterfaceCreateTimestamp = DateTime.Now
                 };
 
                 await processOrderComponentCommandSqlDB.AddToTransactionAsync(processOrderComponent, "SapScada");
             }
 
-            await uow.CommitAsync();
+            var masterRecipes = await GetMasterRecipesFromBOMAsync(billOfMaterialHeaderUUID, processOrderDto.ManufacturingOrder);
+            await masterRecipeCommandSqlDB.AddRangeToTransactionAsync(masterRecipes, "SapScada");
+
+            await uow.CommitTransactionAsync();
 
             return new Response<CreateResponse>
             {
@@ -132,7 +144,7 @@ public class CreateCommandHandler(
         }
         catch (Exception ex)
         {
-            await uow.RollbackAsync();
+            await uow.RollbackAsync("SapScada");
             await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: CreateCommandHandler");
             return new Response<CreateResponse>
             {
@@ -143,7 +155,7 @@ public class CreateCommandHandler(
 
     }
 
-    public int GetDestinoRecetaDeControl(ProcessOrderOperationDto dto)
+    public static int GetDestinoRecetaDeControl(ProcessOrderOperationDto dto)
     {
         if (dto?.Results == null || dto.Results.Count < 2)
             return 0;
@@ -213,6 +225,8 @@ public class CreateCommandHandler(
     {
         try
         {
+            var statusQuerySqlDB = uow.QueryRepository<ProcessOrderStatus>("SapScada");
+
             var statusChecks = new List<(string Value, string Description)>
             {
                 (dto.OrderIsClosed, "closed"),
@@ -227,7 +241,10 @@ public class CreateCommandHandler(
             {
                 if (value == "X")
                 {
-                    var status = await statusQuerySqlDB.FirstOrDefaultAsync(s => s.Description == description, "SapScada", false);
+                    var status = await statusQuerySqlDB.FirstOrDefaultAsync(
+                        "SapScada",
+                        s => s.Description == description,
+                        tracking: false);
                     return status?.Id;
                 }
             }
@@ -241,13 +258,19 @@ public class CreateCommandHandler(
         return null;
     }
 
-    public async Task EnsureProductsExistAsync(List<string> materials)
+    public async Task<List<Product>> GetProductsToAddAsync(List<string> materials)
     {
         try
         {
+            var products = new List<Product>();
+            var productQuerySqlDB = uow.QueryRepository<Product>("SapScada");
+
             foreach (var material in materials)
             {
-                var productExist = await productQuerySqlDB.FirstOrDefaultAsync(x => x.ProductCode == material, "SapScada", false);
+                var productExist = await productQuerySqlDB.FirstOrDefaultAsync(
+                    "SapScada",
+                    s => s.ProductCode == material,
+                    tracking: false);
                 if (productExist != null)
                     continue;
 
@@ -264,23 +287,24 @@ public class CreateCommandHandler(
                     .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
                     ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
 
-                // Inserta en la base de datos
                 var product = new Product
                 {
                     ProductCode = productDto.Product,
                     ProductDescription = productDescription,
-                    ProductType = productDto.ProductType
+                    ProductType = productDto.ProductType,
+                    InterfaceCreateTimestamp = DateTime.Now
                 };
-
-                await productCommandSqlDB.AddAsync(product, "SapScada");
+                products.Add(product); // Productos faltantes por ingresar en la tabla Product
             }
+
+            return products;
         }
-        catch (Exception ex) 
+        catch (Exception ex)
         {
             await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: EnsureProductsExistAsync");
             throw;
         }
-        
+
     }
 
     public static List<string> GetMaterialsFromOrderComponentDto(OrderComponentDto dto)
@@ -295,6 +319,43 @@ public class CreateCommandHandler(
             .ToList();
 
         return materials;
+    }
+
+    public static Guid GetBillOfMaterialHeaderUUID(BillOfMaterialHeaderDto billOfMaterialHeaderDto)
+    {
+        var uuidString = billOfMaterialHeaderDto.Results?.FirstOrDefault()?.BillOfMaterialHeaderUUID;
+
+        if (Guid.TryParse(uuidString, out var guidValue))
+            return guidValue;
+
+        return Guid.Empty;
+    }
+
+    public async Task<List<MasterRecipe>> GetMasterRecipesFromBOMAsync(Guid bomHeaderUuid, string manufacturingOrder)
+    {
+        var url = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/" +
+                  $"A_BillOfMaterial(guid'{bomHeaderUuid}')/to_BillOfMaterialItem?$format=json";
+
+        var dto = await sapOrderService.GetFromSapAsync<BillOfMaterialItemDataDto>(url);
+
+        var result = new List<MasterRecipe>();
+
+        if (dto.Results != null)
+        {
+            foreach (var item in dto.Results)
+            {
+                result.Add(new MasterRecipe
+                {
+                    IdGuid = Guid.NewGuid(),
+                    ManufacturingOrder = manufacturingOrder,
+                    BillOfMaterialComponent = item.BillOfMaterialComponent,
+                    BillOfMaterialItemQuantity = float.TryParse(item.BillOfMaterialItemQuantity, out var qty) ? qty : null,
+                    InterfaceCreateTimestamp = DateTime.Now
+                });
+            }
+        }
+
+        return result;
     }
 
 }

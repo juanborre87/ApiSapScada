@@ -2,7 +2,7 @@
 
 public partial class ProcessOrderConfirmation
 {
-    public long Id { get; set; }
+    public Guid IdGuid { get; set; }
 
     public string OrderId { get; set; }
 
@@ -40,11 +40,13 @@ public partial class ProcessOrderConfirmation
 
     public DateTime? Expiration { get; set; }
 
-    public byte? Sapresponse { get; set; }
+    public string Sapresponse { get; set; }
 
     public byte CommStatus { get; set; }
 
-    public DateTime? InterfaceTimestamp { get; set; }
+    public DateTime? InterfaceCreateTimestamp { get; set; }
+
+    public DateTime? InterfaceUpdateTimestamp { get; set; }
 
     public virtual CommStatus CommStatusNavigation { get; set; }
 

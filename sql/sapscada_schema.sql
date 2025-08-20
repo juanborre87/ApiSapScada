@@ -1,223 +1,217 @@
 USE [SAPSCADA]
 GO
 
-/****** Object:  Table [dbo].[CommStatus]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[CommStatus](
-	[StatusId] [tinyint] NOT NULL,
-	[StatusDescription] [nvarchar](50) NOT NULL,
- CONSTRAINT [PK_CommStatus] PRIMARY KEY CLUSTERED 
-(
-	[StatusId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[ProcessOrder]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ProcessOrder](
-	[ManufacturingOrder] [bigint] NOT NULL,
-	[ManufacturingOrderCategory] [nvarchar](50) NULL,
-	[ManufacturingOrderType] [nvarchar](50) NULL,
-	[OrderLongText] [nvarchar](max) NULL,
-	[ManufacturingOrderImportance] [int] NULL,
-	[MfgOrderCreationDateTime] [datetime] NULL,
-	[LastChangeDateTime] [datetime] NULL,
-	[Material] [nvarchar](50) NULL,
-	[StorageLocation] [nvarchar](50) NULL,
-	[GoodsRecipientName] [nvarchar](50) NULL,
-	[UnloadingPointName] [nvarchar](50) NULL,
-	[ProductionPlant] [nvarchar](50) NULL,
-	[Plant] [nvarchar](50) NULL,
-	[ProductionSupervisor] [nvarchar](50) NULL,
-	[ProductionVersion] [nvarchar](50) NULL,
-	[MfgOrderPlannedStartDateTime] [datetime] NULL,
-	[MfgOrderPlannedEndDateTime] [datetime] NULL,
-	[MfgOrderScheduledStartDateTime] [datetime] NULL,
-	[MfgOrderScheduledEndDateTime] [datetime] NULL,
-	[MfgOrderActualReleaseDateTime] [datetime] NULL,
-	[ProductionUnit] [nvarchar](50) NULL,
-	[ProductionUnitISOCode] [nvarchar](50) NULL,
-	[ProductionUnitSAPCode] [nvarchar](50) NULL,
-	[TotalQuantity] [real] NULL,
-	[MfgOrderPlannedScrapQty] [real] NULL,
-	[MfgOrderConfirmedYieldQty] [real] NULL,
-	[Status] [tinyint] NULL,
-	[CommStatus] [tinyint] NOT NULL,
-	[InterfaceTimestamp] [datetime] NULL,
- CONSTRAINT [PK_ProcessOrder] PRIMARY KEY CLUSTERED 
-(
-	[ManufacturingOrder] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[ProcessOrderComponent]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ProcessOrderComponent](
-	[ProcessOrderComponentId] [bigint] NOT NULL,
-	[ManufacturingOrder] [bigint] NOT NULL,
-	[Material] [nvarchar](50) NULL,
-	[Reservation] [bigint] NULL,
-	[ReservationItem] [nvarchar](50) NULL,
-	[MatlCompRequirementDateTime] [datetime] NULL,
-	[StorageLocation] [nvarchar](50) NULL,
-	[Batch] [nvarchar](50) NULL,
-	[GoodsMovementType] [nvarchar](50) NULL,
-	[GoodsRecipientName] [nvarchar](50) NULL,
-	[UnloadingPointName] [nvarchar](50) NULL,
-	[EntryUnit] [nvarchar](50) NULL,
-	[EntryUnitISOCode] [nvarchar](50) NULL,
-	[EntryUnitSAPCode] [nvarchar](50) NULL,
-	[GoodsMovementEntryQty] [real] NULL,
-	[LastChangeDateTime] [datetime] NULL,
- CONSTRAINT [PK_ProcessOrderComponent] PRIMARY KEY CLUSTERED 
-(
-	[ProcessOrderComponentId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[ProcessOrderConfirmation]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ProcessOrderConfirmation](
-	[ProcessOrderConfirmationId] [bigint] NOT NULL,
-	[OrderID] [bigint] NOT NULL,
-	[ConfirmationText] [nvarchar](max) NULL,
-	[FinalConfirmationType] [nvarchar](50) NULL,
-	[IsFinalConfirmation] [bit] NULL,
-	[ConfirmationEntryDateTime] [datetime] NULL,
-	[EnteredByUser] [nvarchar](255) NULL,
-	[Plant] [nvarchar](50) NULL,
-	[WorkCenter] [nvarchar](50) NULL,
-	[Personnel] [nvarchar](50) NULL,
-	[PostingDate] [datetime] NULL,
-	[ConfirmationUnit] [nvarchar](50) NULL,
-	[ConfirmationUnitISOCode] [nvarchar](50) NULL,
-	[ConfirmationUnitSAPCode] [nvarchar](50) NULL,
-	[ConfirmationYieldQuantity] [real] NULL,
-	[ConfirmationScrapQuantity] [real] NULL,
-	[VarianceReasonCode] [nvarchar](50) NULL,
-	[Batch] [nvarchar](50) NULL,
-	[Expiration] [datetime] NULL,
-	[SAPResponse] [tinyint] NULL,
-	[CommStatus] [tinyint] NOT NULL,
-	[InterfaceTimestamp] [datetime] NULL,
- CONSTRAINT [PK_ProcessOrderConfirmation] PRIMARY KEY CLUSTERED 
-(
-	[ProcessOrderConfirmationId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[ProcessOrderConfirmationMaterialMovement]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ProcessOrderConfirmationMaterialMovement](
-	[ProcessOrderConfirmationMaterialMovementId] [bigint] NOT NULL,
-	[ProcessOrderConfirmationId] [bigint] NOT NULL,
-	[ProcessOrderComponentId] [bigint] NOT NULL,
-	[EntryUnit] [nvarchar](50) NULL,
-	[EntryUnitISOCode] [nvarchar](50) NULL,
-	[EntryUnitSAPCode] [nvarchar](50) NULL,
-	[QuantityInEntryUnit] [real] NULL,
-	[GoodsMovementDateTime] [datetime] NULL,
-	[InterfaceTimestamp] [datetime] NULL,
- CONSTRAINT [PK_ProcessOrderConfirmationMaterialMovement] PRIMARY KEY CLUSTERED 
-(
-	[ProcessOrderConfirmationMaterialMovementId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[ProcessOrderStatus]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ProcessOrderStatus](
-	[StatusId] [tinyint] NOT NULL,
-	[StatusDescription] [nvarchar](50) NOT NULL,
- CONSTRAINT [PK_ProcessOrderStatus] PRIMARY KEY CLUSTERED 
-(
-	[StatusId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[Product]    Script Date: 30/6/2025 14:19:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[Product](
-	[ProductId] [bigint] NOT NULL,
-	[Product] [nvarchar](50) NOT NULL,
-	[ProductDescription] [nvarchar](255) NULL,
-	[ProductType] [nvarchar](100) NULL,
- CONSTRAINT [PK_Product] PRIMARY KEY CLUSTERED 
-(
-	[Product] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[ProcessOrder] ADD  CONSTRAINT [DF_ProcessOrder_CommStatus]  DEFAULT ((0)) FOR [CommStatus]
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmation] ADD  CONSTRAINT [DF_ProcessOrderConfirmation_CommStatus]  DEFAULT ((0)) FOR [CommStatus]
-GO
-ALTER TABLE [dbo].[ProcessOrder]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrder_CommStatus] FOREIGN KEY([CommStatus])
-REFERENCES [dbo].[CommStatus] ([StatusId])
-GO
-ALTER TABLE [dbo].[ProcessOrder] CHECK CONSTRAINT [FK_ProcessOrder_CommStatus]
-GO
-ALTER TABLE [dbo].[ProcessOrder]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrder_ProcessOrderStatus] FOREIGN KEY([Status])
-REFERENCES [dbo].[ProcessOrderStatus] ([StatusId])
-GO
-ALTER TABLE [dbo].[ProcessOrder] CHECK CONSTRAINT [FK_ProcessOrder_ProcessOrderStatus]
-GO
-ALTER TABLE [dbo].[ProcessOrder]  WITH NOCHECK ADD  CONSTRAINT [FK_ProcessOrder_Product] FOREIGN KEY([Material])
-REFERENCES [dbo].[Product] ([Product])
-NOT FOR REPLICATION 
-GO
-ALTER TABLE [dbo].[ProcessOrder] NOCHECK CONSTRAINT [FK_ProcessOrder_Product]
-GO
-ALTER TABLE [dbo].[ProcessOrderComponent]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrderComponent_ProcessOrder] FOREIGN KEY([ManufacturingOrder])
-REFERENCES [dbo].[ProcessOrder] ([ManufacturingOrder])
-GO
-ALTER TABLE [dbo].[ProcessOrderComponent] CHECK CONSTRAINT [FK_ProcessOrderComponent_ProcessOrder]
-GO
-ALTER TABLE [dbo].[ProcessOrderComponent]  WITH NOCHECK ADD  CONSTRAINT [FK_ProcessOrderComponent_Product] FOREIGN KEY([Material])
-REFERENCES [dbo].[Product] ([Product])
-NOT FOR REPLICATION 
-GO
-ALTER TABLE [dbo].[ProcessOrderComponent] NOCHECK CONSTRAINT [FK_ProcessOrderComponent_Product]
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmation]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrderConfirmation_CommStatus] FOREIGN KEY([CommStatus])
-REFERENCES [dbo].[CommStatus] ([StatusId])
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmation] CHECK CONSTRAINT [FK_ProcessOrderConfirmation_CommStatus]
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmation]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrderConfirmation_ProcessOrder] FOREIGN KEY([OrderID])
-REFERENCES [dbo].[ProcessOrder] ([ManufacturingOrder])
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmation] CHECK CONSTRAINT [FK_ProcessOrderConfirmation_ProcessOrder]
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmationMaterialMovement]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent] FOREIGN KEY([ProcessOrderComponentId])
-REFERENCES [dbo].[ProcessOrderComponent] ([ProcessOrderComponentId])
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmationMaterialMovement] CHECK CONSTRAINT [FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent]
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmationMaterialMovement]  WITH CHECK ADD  CONSTRAINT [FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation] FOREIGN KEY([ProcessOrderConfirmationId])
-REFERENCES [dbo].[ProcessOrderConfirmation] ([ProcessOrderConfirmationId])
-GO
-ALTER TABLE [dbo].[ProcessOrderConfirmationMaterialMovement] CHECK CONSTRAINT [FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation]
-GO
+CREATE TABLE dbo.CommStatus (
+    Id TINYINT NOT NULL PRIMARY KEY,
+    Description NVARCHAR(50) NOT NULL
+);
 
+CREATE TABLE dbo.ProcessOrderStatus (
+    Id TINYINT NOT NULL PRIMARY KEY,
+    Description NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE dbo.Product (
+    ProductCode NVARCHAR(50) NOT NULL PRIMARY KEY,
+    ProductDescription NVARCHAR(255),
+    ProductType NVARCHAR(100),
+	InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+);
+
+CREATE TABLE dbo.ProcessOrder (
+	ManufacturingOrder NVARCHAR(50) NOT NULL PRIMARY KEY,
+    ManufacturingOrderCategory NVARCHAR(50),
+    ManufacturingOrderType NVARCHAR(50),
+    OrderLongText NVARCHAR(MAX),
+    ManufacturingOrderImportance INT,
+    MfgOrderCreationDateTime DATETIME,
+    LastChangeDateTime DATETIME,
+    Material NVARCHAR(50),
+    StorageLocation NVARCHAR(50),
+    GoodsRecipientName NVARCHAR(50),
+    UnloadingPointName NVARCHAR(50),
+    ProductionPlant NVARCHAR(50),
+    Plant NVARCHAR(50),
+    ProductionSupervisor NVARCHAR(50),
+    ProductionVersion NVARCHAR(50),
+    MfgOrderPlannedStartDateTime DATETIME,
+    MfgOrderPlannedEndDateTime DATETIME,
+    MfgOrderScheduledStartDateTime DATETIME,
+    MfgOrderScheduledEndDateTime DATETIME,
+    MfgOrderActualReleaseDateTime DATETIME,
+    ProductionUnit NVARCHAR(50),
+    ProductionUnitISOCode NVARCHAR(50),
+    ProductionUnitSAPCode NVARCHAR(50),
+    TotalQuantity REAL,
+    MfgOrderPlannedScrapQty REAL,
+    MfgOrderConfirmedYieldQty REAL,
+    Status TINYINT,
+    CommStatus TINYINT NOT NULL DEFAULT(0),
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    DestinoRecetaDeControl INT,
+    BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT FK_ProcessOrder_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+    CONSTRAINT FK_ProcessOrder_Status 
+		FOREIGN KEY (Status) REFERENCES dbo.ProcessOrderStatus(Id),
+    CONSTRAINT FK_ProcessOrder_Product 
+		FOREIGN KEY (Material) REFERENCES dbo.Product(ProductCode)
+);
+
+CREATE TABLE dbo.MasterRecipe (
+	IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	ManufacturingOrder NVARCHAR(50) NOT NULL,
+    BillOfMaterialComponent NVARCHAR(150) NOT NULL,
+    BillOfMaterialItemQuantity REAL,
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CONSTRAINT FK_MasterRecipe_ProcessOrder 
+		FOREIGN KEY (ManufacturingOrder) REFERENCES dbo.ProcessOrder(ManufacturingOrder)
+);
+
+CREATE TABLE dbo.ProcessOrderComponent (
+    IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    ManufacturingOrder NVARCHAR(50) NOT NULL,
+    Material NVARCHAR(50),
+    Reservation NVARCHAR(50),
+    ReservationItem NVARCHAR(50),
+    MatlCompRequirementDateTime DATETIME,
+    StorageLocation NVARCHAR(50),
+    Batch NVARCHAR(50),
+    GoodsMovementType NVARCHAR(50),
+    GoodsRecipientName NVARCHAR(50),
+    UnloadingPointName NVARCHAR(50),
+    EntryUnit NVARCHAR(50),
+    EntryUnitISOCode NVARCHAR(50),
+    EntryUnitSAPCode NVARCHAR(50),
+    GoodsMovementEntryQty REAL,
+    LastChangeDateTime DATETIME,
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CONSTRAINT FK_ProcessOrderComponent_ProcessOrder 
+		FOREIGN KEY (ManufacturingOrder) REFERENCES dbo.ProcessOrder(ManufacturingOrder),
+    CONSTRAINT FK_ProcessOrderComponent_Product 
+		FOREIGN KEY (Material) REFERENCES dbo.Product(ProductCode)
+);
+
+IF DB_NAME() = 'SAPSCADA'
+BEGIN
+
+CREATE TABLE dbo.ProcessOrderConfirmation (
+	IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    OrderId NVARCHAR(50) NOT NULL,
+    ConfirmationText NVARCHAR(MAX),
+    FinalConfirmationType NVARCHAR(50),
+    IsFinalConfirmation BIT,
+    ConfirmationEntryDateTime DATETIME,
+    EnteredByUser NVARCHAR(255),
+    Plant NVARCHAR(50),
+    WorkCenter NVARCHAR(50),
+    Personnel NVARCHAR(50),
+    PostingDate DATETIME,
+    ConfirmationUnit NVARCHAR(50),
+    ConfirmationUnitISOCode NVARCHAR(50),
+    ConfirmationUnitSAPCode NVARCHAR(50),
+    ConfirmationYieldQuantity REAL,
+    ConfirmationScrapQuantity REAL,
+    VarianceReasonCode NVARCHAR(50),
+    Batch NVARCHAR(50),
+    Expiration DATETIME,
+    SAPResponse VARCHAR(MAX),
+    CommStatus TINYINT NOT NULL DEFAULT(0),
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CONSTRAINT FK_ProcessOrderConfirmation_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+    CONSTRAINT FK_ProcessOrderConfirmation_ProcessOrder 
+		FOREIGN KEY (OrderId) REFERENCES dbo.ProcessOrder(ManufacturingOrder)
+);
+
+CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
+	IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    ProcessOrderConfirmationIdGuid UNIQUEIDENTIFIER NOT NULL,
+    ProcessOrderComponentIdGuid UNIQUEIDENTIFIER NOT NULL,
+    EntryUnit NVARCHAR(50),
+    EntryUnitISOCode NVARCHAR(50),
+    EntryUnitSAPCode NVARCHAR(50),
+    QuantityInEntryUnit REAL,
+    GoodsMovementDateTime DATETIME,
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
+		FOREIGN KEY (ProcessOrderConfirmationIdGuid) REFERENCES dbo.ProcessOrderConfirmation(IdGuid),
+    CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent 
+		FOREIGN KEY (ProcessOrderComponentIdGuid) REFERENCES dbo.ProcessOrderComponent(IdGuid)
+);
+
+END
+ELSE
+BEGIN
+
+CREATE TABLE dbo.ProcessOrderConfirmation (
+    IdGuid UNIQUEIDENTIFIER NOT NULL 
+            CONSTRAINT DF_POC_IdGuid DEFAULT NEWSEQUENTIALID() PRIMARY KEY,    
+    OrderId NVARCHAR(50) NOT NULL,
+    ConfirmationText NVARCHAR(MAX),
+    FinalConfirmationType NVARCHAR(50),
+    IsFinalConfirmation BIT,
+    ConfirmationEntryDateTime DATETIME,
+    EnteredByUser NVARCHAR(255),
+    Plant NVARCHAR(50),
+    WorkCenter NVARCHAR(50),
+    Personnel NVARCHAR(50),
+    PostingDate DATETIME,
+    ConfirmationUnit NVARCHAR(50),
+    ConfirmationUnitISOCode NVARCHAR(50),
+    ConfirmationUnitSAPCode NVARCHAR(50),
+    ConfirmationYieldQuantity REAL,
+    ConfirmationScrapQuantity REAL,
+    VarianceReasonCode NVARCHAR(50),
+    Batch NVARCHAR(50),
+    Expiration DATETIME,
+    SAPResponse VARCHAR(MAX),
+    CommStatus TINYINT NOT NULL DEFAULT(0),
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CONSTRAINT FK_ProcessOrderConfirmation_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+    CONSTRAINT FK_ProcessOrderConfirmation_ProcessOrder 
+		FOREIGN KEY (OrderId) REFERENCES dbo.ProcessOrder(ManufacturingOrder)
+);
+
+CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
+    IdGuid UNIQUEIDENTIFIER NOT NULL 
+            CONSTRAINT DF_POCMM_IdGuid DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    ProcessOrderConfirmationIdGuid UNIQUEIDENTIFIER NOT NULL,
+    ProcessOrderComponentIdGuid UNIQUEIDENTIFIER NOT NULL,
+    EntryUnit NVARCHAR(50),
+    EntryUnitISOCode NVARCHAR(50),
+    EntryUnitSAPCode NVARCHAR(50),
+    QuantityInEntryUnit REAL,
+    GoodsMovementDateTime DATETIME,
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
+		FOREIGN KEY (ProcessOrderConfirmationIdGuid) REFERENCES dbo.ProcessOrderConfirmation(IdGuid),
+    CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent 
+		FOREIGN KEY (ProcessOrderComponentIdGuid) REFERENCES dbo.ProcessOrderComponent(IdGuid)
+);
+
+END
+
+
+INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (0, N'NotReady')
+INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (1, N'ReadyToBeTransferred')
+INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (2, N'TransferredSuccessfully')
+INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (3, N'TransferredWithWarnings')
+INSERT [dbo].[CommStatus] ([Id], [Description]) VALUES (4, N'TransferCancelled')
+GO
+INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (1, N'created')
+INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (2, N'released')
+INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (3, N'delivered')
+INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (4, N'locked')
+INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (5, N'cancelled')
+INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (6, N'closed')
+GO

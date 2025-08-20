@@ -8,18 +8,16 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
 {
     public void Configure(EntityTypeBuilder<ProcessOrder> entity)
     {
-        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC079F66E3DF");
+        entity.HasKey(e => e.ManufacturingOrder).HasName("PK__ProcessO__F6CEB4CE5CB3498D");
 
         entity.ToTable("ProcessOrder");
 
-        entity.HasIndex(e => e.ManufacturingOrder, "UQ__ProcessO__F6CEB4CF2652C798").IsUnique();
-
+        entity.Property(e => e.ManufacturingOrder).HasMaxLength(50);
+        entity.Property(e => e.BillOfMaterialHeaderUuid).HasColumnName("BillOfMaterialHeaderUUID");
         entity.Property(e => e.GoodsRecipientName).HasMaxLength(50);
-        entity.Property(e => e.InterfaceTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
         entity.Property(e => e.LastChangeDateTime).HasColumnType("datetime");
-        entity.Property(e => e.ManufacturingOrder)
-            .IsRequired()
-            .HasMaxLength(50);
         entity.Property(e => e.ManufacturingOrderCategory).HasMaxLength(50);
         entity.Property(e => e.ManufacturingOrderType).HasMaxLength(50);
         entity.Property(e => e.Material).HasMaxLength(50);

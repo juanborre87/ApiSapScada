@@ -1,9 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Dtos
 {
@@ -15,8 +10,6 @@ namespace Domain.Dtos
 
     public class ProcessOrderOperationResultDto
     {
-        [JsonProperty("__metadata")]
-        public Metadata Metadata { get; set; }
 
         [JsonProperty("OrderInternalBillOfOperations")]
         public string OrderInternalBillOfOperations { get; set; }
@@ -157,18 +150,4 @@ namespace Domain.Dtos
         public string DestinoRecetaDeControl { get; set; }
     }
 
-    public class Metadata
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        [JsonProperty("uri")]
-        public string Uri { get; set; }
-
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("etag")]
-        public string Etag { get; set; }
-    }
 }
