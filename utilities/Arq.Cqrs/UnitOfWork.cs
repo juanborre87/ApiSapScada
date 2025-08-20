@@ -59,18 +59,20 @@ public class UnitOfWork : IUnitOfWork, IDisposable
 
     public async Task CommitAsync(string dbChoice)
     {
-        foreach (var kv in _transactions)
+        if (_transactions.TryGetValue(dbChoice, out var tx))
         {
-            var tx = kv.Value;
-            await _dbContextProvider.GetDbContext(dbChoice).SaveChangesAsync();
+            var ctx = _dbContextProvider.GetDbContext(dbChoice);
+
+            await ctx.SaveChangesAsync();
             await tx.CommitAsync();
             await tx.DisposeAsync();
             _dbContextProvider.DisposeScopeFor(dbChoice);
+
+            _transactions.TryRemove(dbChoice, out _);
         }
-        _transactions.Clear();
     }
 
-    public async Task CommitTransactionAsync()
+    public async Task CommitAllAsync()
     {
         foreach (var kv in _transactions)
         {
@@ -95,7 +97,22 @@ public class UnitOfWork : IUnitOfWork, IDisposable
             await tx.DisposeAsync();
             _dbContextProvider.DisposeScopeFor(dbChoice);
         }
-        _transactions.Clear();
+        _transactions.TryRemove(dbChoice, out _);
+    }
+
+    public async Task RollbackAllAsync()
+    {
+        foreach (var kv in _transactions.ToArray())
+        {
+            var dbChoice = kv.Key;
+            var tx = kv.Value;
+
+            await tx.RollbackAsync();
+            await tx.DisposeAsync();
+            _dbContextProvider.DisposeScopeFor(dbChoice);
+
+            _transactions.TryRemove(dbChoice, out _);
+        }
     }
 
     public void Dispose()
@@ -108,9 +125,4 @@ public class UnitOfWork : IUnitOfWork, IDisposable
 
     }
 
-    public async Task<int> SaveChangesAsync(string dbChoice)
-    {
-        var ctx = _dbContextProvider.GetDbContext(dbChoice);
-        return await ctx.SaveChangesAsync();
-    }
 }

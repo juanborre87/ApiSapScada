@@ -8,36 +8,26 @@ namespace Arq.Cqrs;
 
 public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
 {
-    private readonly IDbContextProvider _dbContextProvider;
-    private readonly DbContext _boundContext;
+
+    private readonly DbContext _dbContext;
 
     /// <summary>
-    /// Creates a stateless repository that resolves DbContext by database choice.
-    /// Crea un repositorio "stateless" que resuelve el DbContext según la base de datos elegida.
+    /// Creates a repository that resolves DbContext by database choice.
+    /// Crea un repositorio que resuelve el DbContext según la base de datos elegida.
     /// </summary>
-    public EFQueryRepository(IDbContextProvider dbContextProvider)
-        => _dbContextProvider = dbContextProvider
-        ?? throw new ArgumentNullException(nameof(dbContextProvider));
-
-    /// <summary>
-    /// Creates a repository bound to a specific DbContext (for UnitOfWork).
-    /// Crea un repositorio ligado a un DbContext específico (para UnitOfWork).
-    /// </summary>
-    public EFQueryRepository(DbContext boundContext)
-        => _boundContext = boundContext
-        ?? throw new ArgumentNullException(nameof(boundContext));
+    public EFQueryRepository(DbContext dbContext)
+        => _dbContext = dbContext
+        ?? throw new ArgumentNullException(nameof(dbContext));
 
     // ───────────────────────────────────────────────────────────────
     // Non-paging methods / Métodos sin paginación
     // ───────────────────────────────────────────────────────────────
 
     public async Task<T?> FirstOrDefaultAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
         if (!tracking)
             query = query.AsNoTracking();
 
@@ -45,13 +35,11 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<T?> FirstOrDefaultIncludeMultipleAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true,
         Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -63,13 +51,10 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<List<T>> WhereAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -78,13 +63,11 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<List<T>> WhereIncludeMultipleAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true,
         Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -96,12 +79,10 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public IAsyncEnumerable<T> StreamWhereAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -110,11 +91,9 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<List<T>> ListAllAsync(
-        string dbChoice,
         bool tracking = true)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -123,12 +102,10 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<List<T>> IncludeMultipleAsync(
-        string dbChoice,
         bool tracking = true,
         Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -144,15 +121,13 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     // ───────────────────────────────────────────────────────────────
 
     public async Task<PagedResult<T>> ListAllPageAsync(
-        string dbChoice,
         int pageNumber,
         int pageSize,
         Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
         bool tracking = true)
     {
         ValidatePagingParameters(pageNumber, pageSize);
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
@@ -175,7 +150,6 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<PagedResult<T>> WherePagedAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         int pageNumber,
         int pageSize,
@@ -183,8 +157,7 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
         bool tracking = true)
     {
         ValidatePagingParameters(pageNumber, pageSize);
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (expr != null)
             query = query.Where(expr);
@@ -210,7 +183,6 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<PagedResult<T>> WhereIncludeMultiplePagedAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         int pageNumber,
         int pageSize,
@@ -219,8 +191,7 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
         Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
     {
         ValidatePagingParameters(pageNumber, pageSize);
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (expr != null)
             query = query.Where(expr);
@@ -249,12 +220,10 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<PagedResult<T>> FirstOrDefaultPageAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().AsQueryable();
+        var query = _dbContext.Set<T>().AsQueryable();
 
         if (expr != null)
             query = query.Where(expr);
@@ -277,13 +246,11 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<PagedResult<T>> FirstOrDefaultIncludeMultiplePagedAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         bool tracking = true,
         Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
     {
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().Where(expr);
+        var query = _dbContext.Set<T>().Where(expr);
 
         if (expr != null)
             query = query.Where(expr);
@@ -309,7 +276,6 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
     }
 
     public async Task<PagedResult<T>> StreamWherePageAsync(
-        string dbChoice,
         Expression<Func<T, bool>> expr,
         int pageNumber,
         int pageSize,
@@ -317,8 +283,7 @@ public class EFQueryRepository<T> : IEFQueryRepository<T> where T : class
         bool tracking = true)
     {
         ValidatePagingParameters(pageNumber, pageSize);
-        var context = _dbContextProvider.GetDbContext(dbChoice);
-        var query = context.Set<T>().Where(expr);
+        var query = _dbContext.Set<T>().Where(expr);
 
         if (!tracking)
             query = query.AsNoTracking();

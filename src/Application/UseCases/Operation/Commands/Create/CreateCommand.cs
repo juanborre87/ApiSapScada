@@ -39,12 +39,12 @@ public class CreateCommandHandler(
 
         await logger.LogInfoAsync("Inicio de creación de una nueva orden", null);
 
+        await uow.BeginTransactionAsync("SapScada");
+
         var processOrderCommandSqlDB = uow.CommandRepository<ProcessOrder>("SapScada");
         var processOrderComponentCommandSqlDB = uow.CommandRepository<ProcessOrderComponent>("SapScada");
         var productCommandSqlDB = uow.CommandRepository<Product>("SapScada");
         var masterRecipeCommandSqlDB = uow.CommandRepository<MasterRecipe>("SapScada");
-
-        await uow.BeginTransactionAsync("SapScada");
 
         try
         {
@@ -52,13 +52,13 @@ public class CreateCommandHandler(
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
             var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
             var products = await GetProductsToAddAsync([processOrderDto.Material]);
-            await productCommandSqlDB.AddRangeToTransactionAsync(products, "SapScada");
+            await productCommandSqlDB.AddRangeAsync(products);
 
             string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
             var orderComponentDto = await sapOrderService.GetFromSapAsync<OrderComponentDto>(orderComponentUrl);
             List<string> materials = GetMaterialsFromOrderComponentDto(orderComponentDto);
             products = await GetProductsToAddAsync(materials);
-            await productCommandSqlDB.AddRangeToTransactionAsync(products, "SapScada");
+            await productCommandSqlDB.AddRangeAsync(products);
 
             string orderOperationUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderOperation?$format=json";
             var ProcessOrderOperationDto = await sapOrderService.GetFromSapAsync<ProcessOrderOperationDto>(orderOperationUrl);
@@ -103,7 +103,7 @@ public class CreateCommandHandler(
 
             var messsageString = $"DestinoRecetaDeControl = {destinoRecetaDeControl}";
             await logger.LogInfoAsync(messsageString, "Metodo: CreateCommandHandler");
-            await processOrderCommandSqlDB.AddToTransactionAsync(processOrder, "SapScada");
+            await processOrderCommandSqlDB.AddAsync(processOrder);
 
             foreach (var component in orderComponentDto.Results)
             {
@@ -128,13 +128,13 @@ public class CreateCommandHandler(
                     InterfaceCreateTimestamp = DateTime.Now
                 };
 
-                await processOrderComponentCommandSqlDB.AddToTransactionAsync(processOrderComponent, "SapScada");
+                await processOrderComponentCommandSqlDB.AddAsync(processOrderComponent);
             }
 
             var masterRecipes = await GetMasterRecipesFromBOMAsync(billOfMaterialHeaderUUID, processOrderDto.ManufacturingOrder);
-            await masterRecipeCommandSqlDB.AddRangeToTransactionAsync(masterRecipes, "SapScada");
+            await masterRecipeCommandSqlDB.AddRangeAsync(masterRecipes);
 
-            await uow.CommitTransactionAsync();
+            await uow.CommitAllAsync();
 
             return new Response<CreateResponse>
             {
@@ -242,7 +242,6 @@ public class CreateCommandHandler(
                 if (value == "X")
                 {
                     var status = await statusQuerySqlDB.FirstOrDefaultAsync(
-                        "SapScada",
                         s => s.Description == description,
                         tracking: false);
                     return status?.Id;
@@ -268,7 +267,6 @@ public class CreateCommandHandler(
             foreach (var material in materials)
             {
                 var productExist = await productQuerySqlDB.FirstOrDefaultAsync(
-                    "SapScada",
                     s => s.ProductCode == material,
                     tracking: false);
                 if (productExist != null)

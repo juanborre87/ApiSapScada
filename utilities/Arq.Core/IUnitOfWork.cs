@@ -18,13 +18,19 @@ public interface IUnitOfWork : IDisposable
     /// Commits the active transaction, persisting all changes across databases involved.
     /// Confirma la transacción activa, persistiendo todos los cambios en las bases de datos involucradas.
     /// </summary>
-    Task CommitTransactionAsync();
+    Task CommitAllAsync();
 
     /// <summary>
     /// Rolls back all pending changes for the given database.
     /// Revierte los cambios pendientes en la base de datos indicada.
     /// </summary>
     Task RollbackAsync(string dbChoice);
+
+    /// <summary>
+    /// Rolls back all pending changes for all databases.
+    /// Revierte los cambios pendientes en todas las bases de datos.
+    /// </summary>
+    Task RollbackAllAsync();
 
     /// <summary>
     /// Provides access to the EF Command Repository for performing write operations on the specified database.
