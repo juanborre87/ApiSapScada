@@ -17,6 +17,29 @@ CREATE TABLE dbo.Product (
     ProductType NVARCHAR(100),
 	InterfaceCreateTimestamp DATETIME, 
 	InterfaceUpdateTimestamp  DATETIME,
+	CommStatus TINYINT NOT NULL DEFAULT(0),
+    CONSTRAINT FK_Product_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+);
+
+CREATE TABLE dbo.Recipe (
+	BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	Material NVARCHAR(50) NOT NULL,
+    BillOfMaterial NVARCHAR(50) NOT NULL,
+    InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+    CommStatus TINYINT NOT NULL DEFAULT(0),
+    CONSTRAINT FK_Recipe_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+);
+
+CREATE TABLE dbo.RecipeBOM (
+	BillOfMaterialItemUUID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL,
+    BillOfMaterialComponent NVARCHAR(50) NOT NULL,
+    BillOfMaterialItemQuantity REAL,
+    CONSTRAINT FK_RecipeBOM_Recipe 
+		FOREIGN KEY (BillOfMaterialHeaderUUID) REFERENCES dbo.Recipe(BillOfMaterialHeaderUUID)
 );
 
 CREATE TABLE dbo.ProcessOrder (
@@ -51,34 +74,15 @@ CREATE TABLE dbo.ProcessOrder (
     InterfaceCreateTimestamp DATETIME, 
 	InterfaceUpdateTimestamp  DATETIME,
     DestinoRecetaDeControl INT,
+	BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL,
     CONSTRAINT FK_ProcessOrder_CommStatus 
 		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
     CONSTRAINT FK_ProcessOrder_Status 
 		FOREIGN KEY (Status) REFERENCES dbo.ProcessOrderStatus(Id),
     CONSTRAINT FK_ProcessOrder_Product 
-		FOREIGN KEY (Material) REFERENCES dbo.Product(ProductCode)
-);
-
-CREATE TABLE dbo.Recipe (
-	BillOfMaterialItemUUID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
-	Material NVARCHAR(50) NOT NULL,
-    BillOfMaterial NVARCHAR(50) NOT NULL,
-    InterfaceCreateTimestamp DATETIME, 
-	InterfaceUpdateTimestamp  DATETIME,
-    CommStatus TINYINT NOT NULL DEFAULT(0),
-    CONSTRAINT FK_MasterRecipe_ProcessOrder 
-		FOREIGN KEY (Material) REFERENCES dbo.ProcessOrder(Material),
-    CONSTRAINT FK_MasterRecipe_CommStatus 
-		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
-);
-
-CREATE TABLE dbo.RecipeBOM (
-	IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
-	BillOfMaterialItemUUID UNIQUEIDENTIFIER NOT NULL,
-    BillOfMaterialComponent NVARCHAR(50) NOT NULL,
-    BillOfMaterialItemQuantity REAL,
-    CONSTRAINT FK_RecipeBOM_Recipe 
-		FOREIGN KEY (BillOfMaterialItemUUID) REFERENCES dbo.Recipe(BillOfMaterialItemUUID)
+		FOREIGN KEY (Material) REFERENCES dbo.Product(ProductCode),
+	CONSTRAINT FK_ProcessOrder_Recipe 
+		FOREIGN KEY (BillOfMaterialHeaderUUID) REFERENCES dbo.Recipe(BillOfMaterialHeaderUUID)
 );
 
 CREATE TABLE dbo.ProcessOrderComponent (
@@ -224,7 +228,6 @@ INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (6, N'closed')
 GO
 
 
-
 USE [SAPSCADA];
 GO
 
@@ -263,6 +266,10 @@ ALTER TABLE dbo.ProcessOrder
 
 ALTER TABLE dbo.ProcessOrder 
     DROP CONSTRAINT FK_ProcessOrder_Recipe;
+
+-- Product
+ALTER TABLE dbo.Recipe 
+    DROP CONSTRAINT FK_Product_CommStatus;
 
 -- RecipeBOM
 ALTER TABLE dbo.RecipeBOM 

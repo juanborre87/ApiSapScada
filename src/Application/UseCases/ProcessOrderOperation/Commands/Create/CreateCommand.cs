@@ -203,6 +203,7 @@ public class CreateCommandHandler(
                     ProductCode = productDto.Product,
                     ProductDescription = productDescription,
                     ProductType = productDto.ProductType,
+                    CommStatus = 1,
                     InterfaceCreateTimestamp = DateTime.Now
                 };
                 products.Add(product); // Productos faltantes por ingresar en la tabla Product
