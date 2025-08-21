@@ -42,6 +42,21 @@ public class EFCommandRepository<T> : IEFCommandRepository<T> where T : class
         }
     }
 
+    public async Task UpdateRangeAsync(IEnumerable<T> entities)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+
+        foreach (var entity in entities)
+        {
+            var entry = _dbContext.Entry(entity);
+            if (entry.State == EntityState.Detached)
+            {
+                _dbContext.Set<T>().Attach(entity);
+                entry.State = EntityState.Modified;
+            }
+        }
+    }
+
     public async Task DeleteAsync(T entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -51,4 +66,9 @@ public class EFCommandRepository<T> : IEFCommandRepository<T> where T : class
         _dbContext.Set<T>().Remove(entity);
     }
 
+    public async Task DeleteRangeAsync(IEnumerable<T> entities)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        _dbContext.Set<T>().RemoveRange(entities);
+    }
 }

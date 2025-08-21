@@ -15,6 +15,12 @@ public interface IEFCommandRepository<T> where T : class
     Task UpdateAsync(T entity);
 
     /// <summary>
+    /// Updates multiple entities within an active transaction without saving immediately.
+    /// Actualiza múltiples entidades dentro de una transacción activa sin guardar inmediatamente.
+    /// </summary>
+    Task UpdateRangeAsync(IEnumerable<T> entities);
+
+    /// <summary>
     /// Inserts multiple entities into an active transaction without saving immediately.
     /// Inserta múltiples entidades en una transacción activa sin guardar inmediatamente.
     /// </summary>
@@ -25,6 +31,12 @@ public interface IEFCommandRepository<T> where T : class
     /// Elimina una entidad.
     /// </summary>
     Task DeleteAsync(T entity);
+
+    /// <summary>
+    /// Delete multiple entities.
+    /// Elimina múltiples entidades.
+    /// </summary>
+    Task DeleteRangeAsync(IEnumerable<T> entities);
 
     /// <summary>
     /// Saves all pending changes in the current context to the database.

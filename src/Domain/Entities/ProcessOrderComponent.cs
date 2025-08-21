@@ -36,8 +36,6 @@ public partial class ProcessOrderComponent
 
     public DateTime? InterfaceCreateTimestamp { get; set; }
 
-    public DateTime? InterfaceUpdateTimestamp { get; set; }
-
     public virtual ProcessOrder ManufacturingOrderNavigation { get; set; }
 
     public virtual Product MaterialNavigation { get; set; }

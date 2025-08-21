@@ -8,7 +8,7 @@ public class ProcessOrderConfirmationConfiguration : IEntityTypeConfiguration<Pr
 {
     public void Configure(EntityTypeBuilder<ProcessOrderConfirmation> entity)
     {
-        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145263B8C02");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF14574FBBF8C");
 
         entity.ToTable("ProcessOrderConfirmation");
 

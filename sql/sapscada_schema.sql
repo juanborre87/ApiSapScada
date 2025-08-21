@@ -51,7 +51,6 @@ CREATE TABLE dbo.ProcessOrder (
     InterfaceCreateTimestamp DATETIME, 
 	InterfaceUpdateTimestamp  DATETIME,
     DestinoRecetaDeControl INT,
-    BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL,
     CONSTRAINT FK_ProcessOrder_CommStatus 
 		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
     CONSTRAINT FK_ProcessOrder_Status 
@@ -60,15 +59,26 @@ CREATE TABLE dbo.ProcessOrder (
 		FOREIGN KEY (Material) REFERENCES dbo.Product(ProductCode)
 );
 
-CREATE TABLE dbo.MasterRecipe (
-	IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
-	ManufacturingOrder NVARCHAR(50) NOT NULL,
-    BillOfMaterialComponent NVARCHAR(150) NOT NULL,
-    BillOfMaterialItemQuantity REAL,
+CREATE TABLE dbo.Recipe (
+	BillOfMaterialItemUUID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	Material NVARCHAR(50) NOT NULL,
+    BillOfMaterial NVARCHAR(50) NOT NULL,
     InterfaceCreateTimestamp DATETIME, 
 	InterfaceUpdateTimestamp  DATETIME,
+    CommStatus TINYINT NOT NULL DEFAULT(0),
     CONSTRAINT FK_MasterRecipe_ProcessOrder 
-		FOREIGN KEY (ManufacturingOrder) REFERENCES dbo.ProcessOrder(ManufacturingOrder)
+		FOREIGN KEY (Material) REFERENCES dbo.ProcessOrder(Material),
+    CONSTRAINT FK_MasterRecipe_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+);
+
+CREATE TABLE dbo.RecipeBOM (
+	IdGuid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	BillOfMaterialItemUUID UNIQUEIDENTIFIER NOT NULL,
+    BillOfMaterialComponent NVARCHAR(50) NOT NULL,
+    BillOfMaterialItemQuantity REAL,
+    CONSTRAINT FK_RecipeBOM_Recipe 
+		FOREIGN KEY (BillOfMaterialItemUUID) REFERENCES dbo.Recipe(BillOfMaterialItemUUID)
 );
 
 CREATE TABLE dbo.ProcessOrderComponent (
@@ -89,7 +99,6 @@ CREATE TABLE dbo.ProcessOrderComponent (
     GoodsMovementEntryQty REAL,
     LastChangeDateTime DATETIME,
     InterfaceCreateTimestamp DATETIME, 
-	InterfaceUpdateTimestamp  DATETIME,
     CONSTRAINT FK_ProcessOrderComponent_ProcessOrder 
 		FOREIGN KEY (ManufacturingOrder) REFERENCES dbo.ProcessOrder(ManufacturingOrder),
     CONSTRAINT FK_ProcessOrderComponent_Product 
@@ -139,7 +148,6 @@ CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
     QuantityInEntryUnit REAL,
     GoodsMovementDateTime DATETIME,
     InterfaceCreateTimestamp DATETIME, 
-	InterfaceUpdateTimestamp  DATETIME,
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
 		FOREIGN KEY (ProcessOrderConfirmationIdGuid) REFERENCES dbo.ProcessOrderConfirmation(IdGuid),
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent 
@@ -192,7 +200,6 @@ CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
     QuantityInEntryUnit REAL,
     GoodsMovementDateTime DATETIME,
     InterfaceCreateTimestamp DATETIME, 
-	InterfaceUpdateTimestamp  DATETIME,
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
 		FOREIGN KEY (ProcessOrderConfirmationIdGuid) REFERENCES dbo.ProcessOrderConfirmation(IdGuid),
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent 
@@ -215,3 +222,63 @@ INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (4, N'locked')
 INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (5, N'cancelled')
 INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (6, N'closed')
 GO
+
+
+
+USE [SAPSCADA];
+GO
+
+-- Primero eliminamos las FOREIGN KEYS (hijas antes que padres)
+
+-- ProcessOrderConfirmationMaterialMovement
+ALTER TABLE dbo.ProcessOrderConfirmationMaterialMovement 
+    DROP CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation;
+
+ALTER TABLE dbo.ProcessOrderConfirmationMaterialMovement 
+    DROP CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent;
+
+-- ProcessOrderConfirmation
+ALTER TABLE dbo.ProcessOrderConfirmation 
+    DROP CONSTRAINT FK_ProcessOrderConfirmation_CommStatus;
+
+ALTER TABLE dbo.ProcessOrderConfirmation 
+    DROP CONSTRAINT FK_ProcessOrderConfirmation_ProcessOrder;
+
+-- ProcessOrderComponent
+ALTER TABLE dbo.ProcessOrderComponent 
+    DROP CONSTRAINT FK_ProcessOrderComponent_ProcessOrder;
+
+ALTER TABLE dbo.ProcessOrderComponent 
+    DROP CONSTRAINT FK_ProcessOrderComponent_Product;
+
+-- ProcessOrder
+ALTER TABLE dbo.ProcessOrder 
+    DROP CONSTRAINT FK_ProcessOrder_CommStatus;
+
+ALTER TABLE dbo.ProcessOrder 
+    DROP CONSTRAINT FK_ProcessOrder_Status;
+
+ALTER TABLE dbo.ProcessOrder 
+    DROP CONSTRAINT FK_ProcessOrder_Product;
+
+ALTER TABLE dbo.ProcessOrder 
+    DROP CONSTRAINT FK_ProcessOrder_Recipe;
+
+-- RecipeBOM
+ALTER TABLE dbo.RecipeBOM 
+    DROP CONSTRAINT FK_RecipeBOM_Recipe;
+
+-- Recipe
+ALTER TABLE dbo.Recipe 
+    DROP CONSTRAINT FK_Recipe_CommStatus;
+
+-- Ahora eliminamos las tablas (hijas primero, padres al final)
+DROP TABLE IF EXISTS dbo.ProcessOrderConfirmationMaterialMovement;
+DROP TABLE IF EXISTS dbo.ProcessOrderConfirmation;
+DROP TABLE IF EXISTS dbo.ProcessOrderComponent;
+DROP TABLE IF EXISTS dbo.ProcessOrder;
+DROP TABLE IF EXISTS dbo.RecipeBOM;
+DROP TABLE IF EXISTS dbo.Recipe;
+DROP TABLE IF EXISTS dbo.Product;
+DROP TABLE IF EXISTS dbo.ProcessOrderStatus;
+DROP TABLE IF EXISTS dbo.CommStatus;

@@ -8,7 +8,7 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
 {
     public void Configure(EntityTypeBuilder<ProcessOrder> entity)
     {
-        entity.HasKey(e => e.ManufacturingOrder).HasName("PK__ProcessO__F6CEB4CE5CB3498D");
+        entity.HasKey(e => e.ManufacturingOrder).HasName("PK__ProcessO__F6CEB4CE2A7D8C6E");
 
         entity.ToTable("ProcessOrder");
 
@@ -40,6 +40,11 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
         entity.Property(e => e.ProductionVersion).HasMaxLength(50);
         entity.Property(e => e.StorageLocation).HasMaxLength(50);
         entity.Property(e => e.UnloadingPointName).HasMaxLength(50);
+
+        entity.HasOne(d => d.BillOfMaterialHeaderUu).WithMany(p => p.ProcessOrders)
+            .HasForeignKey(d => d.BillOfMaterialHeaderUuid)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("FK_ProcessOrder_Recipe");
 
         entity.HasOne(d => d.CommStatusNavigation).WithMany(p => p.ProcessOrders)
             .HasForeignKey(d => d.CommStatus)

@@ -8,7 +8,7 @@ public class ProcessOrderStatusConfiguration : IEntityTypeConfiguration<ProcessO
 {
     public void Configure(EntityTypeBuilder<ProcessOrderStatus> entity)
     {
-        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC07F93D358E");
+        entity.HasKey(e => e.Id).HasName("PK__ProcessO__3214EC073AFB5781");
 
         entity.ToTable("ProcessOrderStatus");
 

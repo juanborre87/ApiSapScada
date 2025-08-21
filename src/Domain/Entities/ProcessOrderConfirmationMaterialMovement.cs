@@ -20,8 +20,6 @@ public partial class ProcessOrderConfirmationMaterialMovement
 
     public DateTime? InterfaceCreateTimestamp { get; set; }
 
-    public DateTime? InterfaceUpdateTimestamp { get; set; }
-
     public virtual ProcessOrderComponent ProcessOrderComponentId { get; set; }
 
     public virtual ProcessOrderConfirmation ProcessOrderConfirmationId { get; set; }

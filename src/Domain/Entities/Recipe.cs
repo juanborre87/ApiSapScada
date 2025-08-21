@@ -1,12 +1,12 @@
 ﻿namespace Domain.Entities;
 
-public partial class Product
+public partial class Recipe
 {
-    public string ProductCode { get; set; }
+    public Guid BillOfMaterialHeaderUuid { get; set; }
 
-    public string ProductDescription { get; set; }
+    public string Material { get; set; }
 
-    public string ProductType { get; set; }
+    public string BillOfMaterial { get; set; }
 
     public DateTime? InterfaceCreateTimestamp { get; set; }
 
@@ -16,7 +16,7 @@ public partial class Product
 
     public virtual CommStatus CommStatusNavigation { get; set; }
 
-    public virtual ICollection<ProcessOrderComponent> ProcessOrderComponents { get; set; } = new List<ProcessOrderComponent>();
-
     public virtual ICollection<ProcessOrder> ProcessOrders { get; set; } = new List<ProcessOrder>();
+
+    public virtual ICollection<RecipeBom> RecipeBoms { get; set; } = new List<RecipeBom>();
 }

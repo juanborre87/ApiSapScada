@@ -8,7 +8,7 @@ public class CommStatusConfiguration : IEntityTypeConfiguration<CommStatus>
 {
     public void Configure(EntityTypeBuilder<CommStatus> entity)
     {
-        entity.HasKey(e => e.Id).HasName("PK__CommStat__3214EC078DD36168");
+        entity.HasKey(e => e.Id).HasName("PK__CommStat__3214EC0739C7AD28");
 
         entity.ToTable("CommStatus");
 

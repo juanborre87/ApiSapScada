@@ -83,9 +83,6 @@ public class BillOfMaterialItemDataResultDto
     [JsonProperty("IsSubItem")]
     public bool IsSubItem { get; set; }
 
-    [JsonProperty("FixedQuantity")]
-    public string FixedQuantity { get; set; }
-
     [JsonProperty("MaterialComponentPrice")]
     public string MaterialComponentPrice { get; set; }
 

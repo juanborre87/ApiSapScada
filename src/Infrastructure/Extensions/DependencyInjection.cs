@@ -20,8 +20,6 @@ public static class DependencyInjection
         services.AddHttpClient<SapService>();
         services.AddTransient<ISapService, SapService>();
 
-        //services.AddTransient<ICommandSqlDB<SolicitudPagoEntity>, CommandSqlDB<SolicitudPagoEntity>>();
-        //services.AddTransient<IQuerySqlDB<SolicitudPagoEntity>, QuerySqlDB<SolicitudPagoEntity>>();
         services.AddCQRS(builder =>
         {
             builder.AddContext<ApplicationDbContext>("SapScada");

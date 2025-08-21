@@ -8,7 +8,7 @@ public class ProcessOrderConfirmationMaterialMovementConfiguration : IEntityType
 {
     public void Configure(EntityTypeBuilder<ProcessOrderConfirmationMaterialMovement> entity)
     {
-        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145212CEBFA");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145FC99ACF5");
 
         entity.ToTable("ProcessOrderConfirmationMaterialMovement");
 
@@ -22,7 +22,6 @@ public class ProcessOrderConfirmationMaterialMovementConfiguration : IEntityType
             .HasColumnName("EntryUnitSAPCode");
         entity.Property(e => e.GoodsMovementDateTime).HasColumnType("datetime");
         entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
-        entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
 
         entity.HasOne(d => d.ProcessOrderComponentId).WithMany(p => p.ProcessOrderConfirmationMaterialMovements)
             .HasForeignKey(d => d.ProcessOrderComponentIdGuid)

@@ -9,7 +9,7 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
 {
     public void Configure(EntityTypeBuilder<ProcessOrderComponent> entity)
     {
-        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145D8AEDD65");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145B0B0C94D");
 
         entity.ToTable("ProcessOrderComponent");
 
@@ -25,7 +25,6 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
         entity.Property(e => e.GoodsMovementType).HasMaxLength(50);
         entity.Property(e => e.GoodsRecipientName).HasMaxLength(50);
         entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
-        entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
         entity.Property(e => e.LastChangeDateTime).HasColumnType("datetime");
         entity.Property(e => e.ManufacturingOrder)
             .IsRequired()

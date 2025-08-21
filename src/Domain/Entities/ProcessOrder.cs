@@ -66,9 +66,9 @@ public partial class ProcessOrder
 
     public Guid BillOfMaterialHeaderUuid { get; set; }
 
-    public virtual CommStatus CommStatusNavigation { get; set; }
+    public virtual Recipe BillOfMaterialHeaderUu { get; set; }
 
-    public virtual ICollection<MasterRecipe> MasterRecipes { get; set; } = new List<MasterRecipe>();
+    public virtual CommStatus CommStatusNavigation { get; set; }
 
     public virtual Product MaterialNavigation { get; set; }
 

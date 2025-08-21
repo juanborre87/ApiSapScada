@@ -1,9 +1,6 @@
-﻿using Domain.Models;
+﻿namespace Application.Interfaces;
 
-namespace Application.Interfaces
+public interface ISapService
 {
-    public interface ISapService
-    {
-        Task<T> GetFromSapAsync<T>(string requestUrl);
-    }
+    Task<T> GetFromSapAsync<T>(string requestUrl);
 }

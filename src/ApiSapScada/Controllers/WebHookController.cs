@@ -1,4 +1,5 @@
-﻿using Application.UseCases.Operation.Commands.Create;
+﻿using Application.UseCases.ProcessOrderOperation.Commands.Create;
+using Application.UseCases.ProcessOrderOperation.Commands.Update;
 using Domain.Models;
 using Domain.Models.Payload;
 using MediatR;
@@ -34,13 +35,37 @@ public class WebHookController : ControllerBase
 
             switch (eventType)
             {
+                case "sap.s4.beh.masterrecipe.v1.MasterRecipe.Created.v1":
+                    {
+                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
+                            new { result = false, message = "Endpoint en reparación" });
+                    }
+                case "sap.s4.beh.masterrecipe.v1.MasterRecipe.Changed.v1":
+                    {
+                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
+                            new { result = false, message = "Endpoint en reparación" });
+                    }
                 case "sap.s4.beh.product.v1.Product.Created.v1":
+                    {
+                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
+                            new { result = false, message = "Endpoint en reparación" });
+                    }
                 case "sap.s4.beh.product.v1.Product.Changed.v1":
+                    {
+                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
+                            new { result = false, message = "Endpoint en reparación" });
+                    }
                 case "sap.s4.beh.processorder.v1.ProcessOrder.Created.v1":
-                case "sap.s4.beh.processorder.v1.ProcessOrder.Changed.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<ProcessOrderData>>(rawBody);
                         var command = new CreateCommand<ProcessOrderData> { EventPayload = payload };
+                        await _mediator.Send(command);
+                        break;
+                    }
+                case "sap.s4.beh.processorder.v1.ProcessOrder.Changed.v1":
+                    {
+                        var payload = JsonConvert.DeserializeObject<EventPayload<ProcessOrderData>>(rawBody);
+                        var command = new UpdateCommand<ProcessOrderData> { EventPayload = payload };
                         await _mediator.Send(command);
                         break;
                     }
