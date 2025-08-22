@@ -71,7 +71,7 @@ public class CreateCommandHandler(
             await productCommand.AddRangeAsync(products);
 
             string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
-            var orderComponentDto = await sapOrderService.GetFromSapAsync<OrderComponentDto>(orderComponentUrl);
+            var orderComponentDto = await sapOrderService.GetFromSapAsync<ProcessOrderComponentDto>(orderComponentUrl);
             List<string> materials = CommonMethods.GetMaterials(orderComponentDto);
             products = await GetProductsToAddAsync(materials);
             await productCommand.AddRangeAsync(products);
@@ -134,7 +134,7 @@ public class CreateCommandHandler(
                     Batch = component.Batch,
                     GoodsMovementType = component.GoodsMovementType,
                     GoodsRecipientName = component.GoodsRecipientName,
-                    UnloadingPointName = component.UnloadingPointName,
+                    UnloadingPointName = CommonMethods.GetUnloadingPointName(component),
                     EntryUnit = component.EntryUnit,
                     EntryUnitIsocode = component.EntryUnitISOCode,
                     EntryUnitSapcode = component.EntryUnitSAPCode,

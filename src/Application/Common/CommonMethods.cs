@@ -58,7 +58,22 @@ public static class CommonMethods
         };
     }
 
-    public static List<string> GetMaterials(OrderComponentDto dto)
+    public static string GetUnloadingPointName(ProcessOrderComponentResultDto dto)
+    {
+        const string DefaultValue = "CE";
+
+        if (dto == null || string.IsNullOrWhiteSpace(dto.UnloadingPointName))
+            return DefaultValue;
+
+        return dto.UnloadingPointName.Trim().ToUpper() switch
+        {
+            "CE" => "CE",
+            "BL" => "BL",
+            _ => DefaultValue
+        };
+    }
+
+    public static List<string> GetMaterials(ProcessOrderComponentDto dto)
     {
         if (dto?.Results == null || dto.Results.Count == 0)
             return [];

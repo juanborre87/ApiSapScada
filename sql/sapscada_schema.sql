@@ -1,4 +1,4 @@
-USE [SAPSCADA]
+﻿USE [SAPSCADA]
 GO
 
 CREATE TABLE dbo.CommStatus (
@@ -12,7 +12,8 @@ CREATE TABLE dbo.ProcessOrderStatus (
 );
 
 CREATE TABLE dbo.Product (
-    ProductCode NVARCHAR(50) NOT NULL PRIMARY KEY,
+	Id BIGINT IDENTITY NOT NULL PRIMARY KEY,
+	ProductCode NVARCHAR(50) UNIQUE,
     ProductDescription NVARCHAR(255),
     ProductType NVARCHAR(100),
 	InterfaceCreateTimestamp DATETIME, 
@@ -37,7 +38,7 @@ CREATE TABLE dbo.RecipeBOM (
 	BillOfMaterialItemUUID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
 	BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL,
     BillOfMaterialComponent NVARCHAR(50) NOT NULL,
-    BillOfMaterialItemQuantity REAL,
+    BillOfMaterialItemQuantity DECIMAL(18,3),
     CONSTRAINT FK_RecipeBOM_Recipe 
 		FOREIGN KEY (BillOfMaterialHeaderUUID) REFERENCES dbo.Recipe(BillOfMaterialHeaderUUID)
 );
@@ -66,9 +67,9 @@ CREATE TABLE dbo.ProcessOrder (
     ProductionUnit NVARCHAR(50),
     ProductionUnitISOCode NVARCHAR(50),
     ProductionUnitSAPCode NVARCHAR(50),
-    TotalQuantity REAL,
-    MfgOrderPlannedScrapQty REAL,
-    MfgOrderConfirmedYieldQty REAL,
+    TotalQuantity DECIMAL(18,3),
+    MfgOrderPlannedScrapQty DECIMAL(18,3),
+    MfgOrderConfirmedYieldQty DECIMAL(18,3),
     Status TINYINT,
     CommStatus TINYINT NOT NULL DEFAULT(0),
     InterfaceCreateTimestamp DATETIME, 
@@ -100,7 +101,7 @@ CREATE TABLE dbo.ProcessOrderComponent (
     EntryUnit NVARCHAR(50),
     EntryUnitISOCode NVARCHAR(50),
     EntryUnitSAPCode NVARCHAR(50),
-    GoodsMovementEntryQty REAL,
+    GoodsMovementEntryQty DECIMAL(18,3),
     LastChangeDateTime DATETIME,
     InterfaceCreateTimestamp DATETIME, 
     CONSTRAINT FK_ProcessOrderComponent_ProcessOrder 
@@ -127,8 +128,8 @@ CREATE TABLE dbo.ProcessOrderConfirmation (
     ConfirmationUnit NVARCHAR(50),
     ConfirmationUnitISOCode NVARCHAR(50),
     ConfirmationUnitSAPCode NVARCHAR(50),
-    ConfirmationYieldQuantity REAL,
-    ConfirmationScrapQuantity REAL,
+    ConfirmationYieldQuantity DECIMAL(18,3),
+    ConfirmationScrapQuantity DECIMAL(18,3),
     VarianceReasonCode NVARCHAR(50),
     Batch NVARCHAR(50),
     Expiration DATETIME,
@@ -149,7 +150,7 @@ CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
     EntryUnit NVARCHAR(50),
     EntryUnitISOCode NVARCHAR(50),
     EntryUnitSAPCode NVARCHAR(50),
-    QuantityInEntryUnit REAL,
+    QuantityInEntryUnit DECIMAL(18,3),
     GoodsMovementDateTime DATETIME,
     InterfaceCreateTimestamp DATETIME, 
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
@@ -178,8 +179,8 @@ CREATE TABLE dbo.ProcessOrderConfirmation (
     ConfirmationUnit NVARCHAR(50),
     ConfirmationUnitISOCode NVARCHAR(50),
     ConfirmationUnitSAPCode NVARCHAR(50),
-    ConfirmationYieldQuantity REAL,
-    ConfirmationScrapQuantity REAL,
+    ConfirmationYieldQuantity DECIMAL(18,3),
+    ConfirmationScrapQuantity DECIMAL(18,3),
     VarianceReasonCode NVARCHAR(50),
     Batch NVARCHAR(50),
     Expiration DATETIME,
@@ -201,7 +202,7 @@ CREATE TABLE dbo.ProcessOrderConfirmationMaterialMovement (
     EntryUnit NVARCHAR(50),
     EntryUnitISOCode NVARCHAR(50),
     EntryUnitSAPCode NVARCHAR(50),
-    QuantityInEntryUnit REAL,
+    QuantityInEntryUnit DECIMAL(18,3),
     GoodsMovementDateTime DATETIME,
     InterfaceCreateTimestamp DATETIME, 
     CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation 
@@ -227,57 +228,69 @@ INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (5, N'cancelled')
 INSERT [dbo].[ProcessOrderStatus] ([Id], [Description]) VALUES (6, N'closed')
 GO
 
+/* ==============================
+   INDICES RECOMENDADOS
+   ============================== */
+
+/* ---- Producto ---- */
+-- Ya tiene UNIQUE(ProductCode), suficiente para búsquedas por código
+
+/* ---- Recipe ---- */
+CREATE INDEX IX_Recipe_Material
+    ON dbo.Recipe(Material);
+
+-- Optimiza joins RecipeBOM → Recipe
+CREATE INDEX IX_Recipe_CommStatus
+    ON dbo.Recipe(CommStatus);
+
+/* ---- RecipeBOM ---- */
+-- Optimiza joins por BillOfMaterialHeaderUUID
+CREATE INDEX IX_RecipeBOM_BillOfMaterialHeaderUUID
+    ON dbo.RecipeBOM(BillOfMaterialHeaderUUID);
+
+/* ---- ProcessOrder ---- */
+CREATE INDEX IX_ProcessOrder_Material
+    ON dbo.ProcessOrder(Material);
+
+CREATE INDEX IX_ProcessOrder_BillOfMaterialHeaderUUID
+    ON dbo.ProcessOrder(BillOfMaterialHeaderUUID);
+
+CREATE INDEX IX_ProcessOrder_CommStatus
+    ON dbo.ProcessOrder(CommStatus);
+
+CREATE INDEX IX_ProcessOrder_Status
+    ON dbo.ProcessOrder(Status);
+
+/* ---- ProcessOrderComponent ---- */
+CREATE INDEX IX_ProcessOrderComponent_ManufacturingOrder
+    ON dbo.ProcessOrderComponent(ManufacturingOrder);
+
+CREATE INDEX IX_ProcessOrderComponent_Material
+    ON dbo.ProcessOrderComponent(Material);
+
+/* ---- ProcessOrderConfirmation ---- */
+CREATE INDEX IX_ProcessOrderConfirmation_OrderId
+    ON dbo.ProcessOrderConfirmation(OrderId);
+
+CREATE INDEX IX_ProcessOrderConfirmation_CommStatus
+    ON dbo.ProcessOrderConfirmation(CommStatus);
+
+/* ---- ProcessOrderConfirmationMaterialMovement ---- */
+CREATE INDEX IX_POCMM_ProcessOrderConfirmationIdGuid
+    ON dbo.ProcessOrderConfirmationMaterialMovement(ProcessOrderConfirmationIdGuid);
+
+CREATE INDEX IX_POCMM_ProcessOrderComponentIdGuid
+    ON dbo.ProcessOrderConfirmationMaterialMovement(ProcessOrderComponentIdGuid);
+
+
+
+
+/* ==============================
+   SCRIPT PARA ELIMINAR TODO EN CASCADA
+   ============================== */
 
 USE [SAPSCADA];
 GO
-
--- Primero eliminamos las FOREIGN KEYS (hijas antes que padres)
-
--- ProcessOrderConfirmationMaterialMovement
-ALTER TABLE dbo.ProcessOrderConfirmationMaterialMovement 
-    DROP CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderConfirmation;
-
-ALTER TABLE dbo.ProcessOrderConfirmationMaterialMovement 
-    DROP CONSTRAINT FK_ProcessOrderConfirmationMaterialMovement_ProcessOrderComponent;
-
--- ProcessOrderConfirmation
-ALTER TABLE dbo.ProcessOrderConfirmation 
-    DROP CONSTRAINT FK_ProcessOrderConfirmation_CommStatus;
-
-ALTER TABLE dbo.ProcessOrderConfirmation 
-    DROP CONSTRAINT FK_ProcessOrderConfirmation_ProcessOrder;
-
--- ProcessOrderComponent
-ALTER TABLE dbo.ProcessOrderComponent 
-    DROP CONSTRAINT FK_ProcessOrderComponent_ProcessOrder;
-
-ALTER TABLE dbo.ProcessOrderComponent 
-    DROP CONSTRAINT FK_ProcessOrderComponent_Product;
-
--- ProcessOrder
-ALTER TABLE dbo.ProcessOrder 
-    DROP CONSTRAINT FK_ProcessOrder_CommStatus;
-
-ALTER TABLE dbo.ProcessOrder 
-    DROP CONSTRAINT FK_ProcessOrder_Status;
-
-ALTER TABLE dbo.ProcessOrder 
-    DROP CONSTRAINT FK_ProcessOrder_Product;
-
-ALTER TABLE dbo.ProcessOrder 
-    DROP CONSTRAINT FK_ProcessOrder_Recipe;
-
--- Product
-ALTER TABLE dbo.Recipe 
-    DROP CONSTRAINT FK_Product_CommStatus;
-
--- RecipeBOM
-ALTER TABLE dbo.RecipeBOM 
-    DROP CONSTRAINT FK_RecipeBOM_Recipe;
-
--- Recipe
-ALTER TABLE dbo.Recipe 
-    DROP CONSTRAINT FK_Recipe_CommStatus;
 
 -- Ahora eliminamos las tablas (hijas primero, padres al final)
 DROP TABLE IF EXISTS dbo.ProcessOrderConfirmationMaterialMovement;

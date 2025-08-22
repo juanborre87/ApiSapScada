@@ -3,13 +3,13 @@
 namespace Domain.Dtos;
 
 
-public class OrderComponentDto
+public class ProcessOrderComponentDto
 {
     [JsonProperty("results")]
-    public List<OrderComponentResultDto> Results { get; set; }
+    public List<ProcessOrderComponentResultDto> Results { get; set; }
 }
 
-public class OrderComponentResultDto
+public class ProcessOrderComponentResultDto
 {
     [JsonProperty("Reservation")]
     public string Reservation { get; set; }
