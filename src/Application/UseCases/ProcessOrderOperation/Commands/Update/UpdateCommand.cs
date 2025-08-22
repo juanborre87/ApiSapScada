@@ -9,7 +9,6 @@ using Domain.Models;
 using Domain.Models.Payload;
 using MediatR;
 using Microsoft.Extensions.Configuration;
-using System.Globalization;
 using System.Net;
 
 namespace Application.UseCases.ProcessOrderOperation.Commands.Update;
@@ -39,25 +38,23 @@ public class UpdateCommandHandler(
             };
         }
 
+        await logger.LogInfoAsync("Inicio de actualización de una orden", "Metodo: UpdateCommandHandler");
+        await uow.BeginTransactionAsync("SapScada");
+
+        var processOrderCommand = uow.CommandRepository<ProcessOrder>("SapScada");
+        var processOrderQuery = uow.QueryRepository<ProcessOrder>("SapScada");
+        var componentCommand = uow.CommandRepository<ProcessOrderComponent>("SapScada");
+        var componentQuery = uow.QueryRepository<ProcessOrderComponent>("SapScada");
+        var productCommand = uow.CommandRepository<Product>("SapScada");
+        var recipeCommand = uow.CommandRepository<Recipe>("SapScada");
+        var recipeQuery = uow.QueryRepository<Recipe>("SapScada");
+        var recipeBomCommand = uow.CommandRepository<RecipeBom>("SapScada");
+        var statusQuery = uow.QueryRepository<ProcessOrderStatus>("SapScada");
 
         try
         {
-            await logger.LogInfoAsync("Inicio de actualización de una orden", "Metodo: UpdateCommandHandler");
-
-            await uow.BeginTransactionAsync("SapScada");
-
-            var processOrderCommand = uow.CommandRepository<ProcessOrder>("SapScada");
-            var processOrderQuery = uow.QueryRepository<ProcessOrder>("SapScada");
-            var componentCommand = uow.CommandRepository<ProcessOrderComponent>("SapScada");
-            var componentQuery = uow.QueryRepository<ProcessOrderComponent>("SapScada");
-            var productCommand = uow.CommandRepository<Product>("SapScada");
-            var recipeCommand = uow.CommandRepository<Recipe>("SapScada");
-            var recipeQuery = uow.QueryRepository<Recipe>("SapScada");
-            var recipeBomCommand = uow.CommandRepository<RecipeBom>("SapScada");
-            var statusQuery = uow.QueryRepository<ProcessOrderStatus>("SapScada");
-
             var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder);
-            if (processOrderExist != null)
+            if (processOrderExist == null)
             {
                 await logger.LogErrorAsync($"La orden no existe, no se puede actualizar", "Metodo: UpdateCommandHandler");
                 return new Response<UpdateResponse>
@@ -157,7 +154,7 @@ public class UpdateCommandHandler(
             return new Response<UpdateResponse>
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new UpdateResponse { Result = true }
+                Content = new UpdateResponse { Result = true, Message = "Los registros fueron actualizados con exito" }
             };
         }
         catch (Exception ex)

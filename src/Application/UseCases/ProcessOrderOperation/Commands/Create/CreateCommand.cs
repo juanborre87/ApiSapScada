@@ -38,22 +38,21 @@ public class CreateCommandHandler(
             };
         }
 
+        await logger.LogInfoAsync("Inicio de creación de una nueva orden", "Metodo: CreateCommandHandler");
+        await uow.BeginTransactionAsync("SapScada");
+
+        var processOrderCommand = uow.CommandRepository<ProcessOrder>("SapScada");
+        var processOrderQuery = uow.QueryRepository<ProcessOrder>("SapScada");
+        var componentCommand = uow.CommandRepository<ProcessOrderComponent>("SapScada");
+        var productCommand = uow.CommandRepository<Product>("SapScada");
+        var recipeCommand = uow.CommandRepository<Recipe>("SapScada");
+        var recipeQuery = uow.QueryRepository<Recipe>("SapScada");
+        var recipeBomCommand = uow.CommandRepository<RecipeBom>("SapScada");
+        var statusQuery = uow.QueryRepository<ProcessOrderStatus>("SapScada");
 
         try
         {
-            await logger.LogInfoAsync("Inicio de creación de una nueva orden", "Metodo: CreateCommandHandler");
-            await uow.BeginTransactionAsync("SapScada");
-
-            var processOrderCommand = uow.CommandRepository<ProcessOrder>("SapScada");
-            var processOrderQuery = uow.QueryRepository<ProcessOrder>("SapScada");
-            var componentCommand = uow.CommandRepository<ProcessOrderComponent>("SapScada");
-            var productCommand = uow.CommandRepository<Product>("SapScada");
-            var recipeCommand = uow.CommandRepository<Recipe>("SapScada");
-            var recipeQuery = uow.QueryRepository<Recipe>("SapScada");
-            var recipeBomCommand = uow.CommandRepository<RecipeBom>("SapScada");
-            var statusQuery = uow.QueryRepository<ProcessOrderStatus>("SapScada");
-
-            var processOrderExist = processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, false);
+            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, false);
             if (processOrderExist != null)
             {
                 await logger.LogErrorAsync($"La orden ya existe, no se puede crear con el mismo numero de orden", "Metodo: CreateCommandHandler");
@@ -154,7 +153,7 @@ public class CreateCommandHandler(
             return new Response<CreateResponse>
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new CreateResponse { Result = true }
+                Content = new CreateResponse { Result = true, Message = "Los registros fueron creados con exito" }
             };
         }
         catch (Exception ex)

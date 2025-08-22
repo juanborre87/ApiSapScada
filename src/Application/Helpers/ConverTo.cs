@@ -56,6 +56,6 @@ public static class ConverTo
 
     public static float? FormatFloat(string? input)
     {
-        return float.TryParse(input, out var x) ? x : (float?)null;
+        return float.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : (float?)null;
     }
 }
