@@ -1,5 +1,9 @@
-﻿using Application.UseCases.ProcessOrderOperation.Commands.Create;
-using Application.UseCases.ProcessOrderOperation.Commands.Update;
+﻿using Application.UseCases.Operation.OpOrder.Commands.Create;
+using Application.UseCases.Operation.OpOrder.Commands.Update;
+using Application.UseCases.Operation.OpProduct.Commands.Create;
+using Application.UseCases.Operation.OpProduct.Commands.Update;
+using Application.UseCases.Operation.OpRecipe.Commands.Create;
+using Application.UseCases.Operation.OpRecipe.Commands.Update;
 using Domain.Models;
 using Domain.Models.Payload;
 using MediatR;
@@ -37,35 +41,43 @@ public class WebHookController : ControllerBase
             {
                 case "sap.s4.beh.masterrecipe.v1.MasterRecipe.Created.v1":
                     {
-                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
-                            new { result = false, message = "Endpoint en reparación" });
+                        var payload = JsonConvert.DeserializeObject<EventPayload<RecipeData>>(rawBody);
+                        var command = new CreateRecipeCommand<RecipeData> { EventPayload = payload };
+                        await _mediator.Send(command);
+                        break;
                     }
                 case "sap.s4.beh.masterrecipe.v1.MasterRecipe.Changed.v1":
                     {
-                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
-                            new { result = false, message = "Endpoint en reparación" });
+                        var payload = JsonConvert.DeserializeObject<EventPayload<RecipeData>>(rawBody);
+                        var command = new UpdateRecipeCommand<RecipeData> { EventPayload = payload };
+                        await _mediator.Send(command);
+                        break;
                     }
                 case "sap.s4.beh.product.v1.Product.Created.v1":
                     {
-                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
-                            new { result = false, message = "Endpoint en reparación" });
+                        var payload = JsonConvert.DeserializeObject<EventPayload<MaterialData>>(rawBody);
+                        var command = new CreateProductCommand<MaterialData> { EventPayload = payload };
+                        await _mediator.Send(command);
+                        break;
                     }
                 case "sap.s4.beh.product.v1.Product.Changed.v1":
                     {
-                        return StatusCode((int)HttpStatusCode.ServiceUnavailable,
-                            new { result = false, message = "Endpoint en reparación" });
+                        var payload = JsonConvert.DeserializeObject<EventPayload<MaterialData>>(rawBody);
+                        var command = new UpdateProductCommand<MaterialData> { EventPayload = payload };
+                        await _mediator.Send(command);
+                        break;
                     }
                 case "sap.s4.beh.processorder.v1.ProcessOrder.Created.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<ProcessOrderData>>(rawBody);
-                        var command = new CreateCommand<ProcessOrderData> { EventPayload = payload };
+                        var command = new CreateOrderCommand<ProcessOrderData> { EventPayload = payload };
                         await _mediator.Send(command);
                         break;
                     }
                 case "sap.s4.beh.processorder.v1.ProcessOrder.Changed.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<ProcessOrderData>>(rawBody);
-                        var command = new UpdateCommand<ProcessOrderData> { EventPayload = payload };
+                        var command = new UpdateOrderCommand<ProcessOrderData> { EventPayload = payload };
                         await _mediator.Send(command);
                         break;
                     }

@@ -11,40 +11,39 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using System.Net;
 
-namespace Application.UseCases.ProcessOrderOperation.Commands.Update;
+namespace Application.UseCases.Operation.OpOrder.Commands.Create;
 
-public class UpdateCommand<T> : IRequest<Response<UpdateResponse>>
+public class CreateOrderCommand<T> : IRequest<Response<CreateOrderResponse>>
 {
     public EventPayload<T> EventPayload { get; set; }
 }
 
-public class UpdateCommandHandler(
+public class CreateOrderCommandHandler(
     IConfiguration configuration,
     IFileLogger logger,
     IUnitOfWork uow,
     ISapService sapOrderService)
-    : IRequestHandler<UpdateCommand<ProcessOrderData>, Response<UpdateResponse>>
+    : IRequestHandler<CreateOrderCommand<ProcessOrderData>, Response<CreateOrderResponse>>
 {
-    public async Task<Response<UpdateResponse>> Handle(UpdateCommand<ProcessOrderData> request, CancellationToken cancellationToken)
+    public async Task<Response<CreateOrderResponse>> Handle(CreateOrderCommand<ProcessOrderData> request, CancellationToken cancellationToken)
     {
         var eventPayload = request.EventPayload;
         if (eventPayload == null)
         {
-            await logger.LogInfoAsync("El request es inválido", "Metodo: UpdateCommandHandler");
-            return new Response<UpdateResponse>
+            await logger.LogInfoAsync("El request es inválido", "Metodo: CreateOrderCommandHandler");
+            return new Response<CreateOrderResponse>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                Content = new UpdateResponse { Result = false, Message = "El request es inválido" }
+                Content = new CreateOrderResponse { Result = false, Message = "El request es inválido" }
             };
         }
 
-        await logger.LogInfoAsync("Inicio de actualización de una orden", "Metodo: UpdateCommandHandler");
+        await logger.LogInfoAsync("Inicio de creación de una nueva orden", "Metodo: CreateOrderCommandHandler");
         await uow.BeginTransactionAsync("SapScada");
 
         var processOrderCommand = uow.CommandRepository<ProcessOrder>("SapScada");
         var processOrderQuery = uow.QueryRepository<ProcessOrder>("SapScada");
         var componentCommand = uow.CommandRepository<ProcessOrderComponent>("SapScada");
-        var componentQuery = uow.QueryRepository<ProcessOrderComponent>("SapScada");
         var productCommand = uow.CommandRepository<Product>("SapScada");
         var recipeCommand = uow.CommandRepository<Recipe>("SapScada");
         var recipeQuery = uow.QueryRepository<Recipe>("SapScada");
@@ -53,14 +52,14 @@ public class UpdateCommandHandler(
 
         try
         {
-            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder);
-            if (processOrderExist == null)
+            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, false);
+            if (processOrderExist != null)
             {
-                await logger.LogErrorAsync($"La orden no existe, no se puede actualizar", "Metodo: UpdateCommandHandler");
-                return new Response<UpdateResponse>
+                await logger.LogErrorAsync($"La orden ya existe, no se puede crear con el mismo numero de orden", "Metodo: CreateOrderCommandHandler");
+                return new Response<CreateOrderResponse>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    Content = new UpdateResponse { Result = false, Message = "La orden no existe, no se puede actualizar" }
+                    Content = new CreateOrderResponse { Result = false, Message = "La orden ya existe, no se puede crear con el mismo numero de orden" }
                 };
             }
 
@@ -91,38 +90,37 @@ public class UpdateCommandHandler(
                 await recipeBomCommand.AddRangeAsync(recipesBom);
             }
 
-            processOrderExist.ManufacturingOrderCategory = processOrderDto.ManufacturingOrderCategory;
-            processOrderExist.ManufacturingOrderType = processOrderDto.ManufacturingOrderType;
-            processOrderExist.GoodsRecipientName = processOrderDto.GoodsRecipientName;
-            processOrderExist.LastChangeDateTime = ConverTo.FormatDateTime(processOrderDto.LastChangeDateTime);
-            processOrderExist.Material = processOrderDto.Material;
-            processOrderExist.MfgOrderActualReleaseDateTime = ConverTo.FormatDateTime(processOrderDto.MfgOrderActualReleaseDate);
-            processOrderExist.MfgOrderCreationDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderCreationDate, processOrderDto.MfgOrderCreationTime);
-            processOrderExist.MfgOrderPlannedEndDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderPlannedEndDate, processOrderDto.MfgOrderPlannedEndTime);
-            processOrderExist.MfgOrderPlannedStartDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderPlannedStartDate, processOrderDto.MfgOrderPlannedStartTime);
-            processOrderExist.MfgOrderScheduledEndDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderScheduledEndDate, processOrderDto.MfgOrderScheduledEndTime);
-            processOrderExist.MfgOrderScheduledStartDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderScheduledStartDate, processOrderDto.MfgOrderScheduledStartTime);
-            processOrderExist.Plant = processOrderDto.Plant;
-            processOrderExist.ProductionPlant = processOrderDto.ProductionPlant;
-            processOrderExist.ProductionSupervisor = processOrderDto.ProductionSupervisor;
-            processOrderExist.ProductionUnit = processOrderDto.ProductionUnit;
-            processOrderExist.ProductionUnitIsocode = processOrderDto.ProductionUnitISOCode;
-            processOrderExist.ProductionUnitSapcode = processOrderDto.ProductionUnitSAPCode;
-            processOrderExist.ProductionVersion = processOrderDto.ProductionVersion;
-            processOrderExist.StorageLocation = processOrderDto.StorageLocation;
-            processOrderExist.UnloadingPointName = processOrderDto.UnloadingPointName;
-            processOrderExist.TotalQuantity = ConverTo.FormatFloat(processOrderDto.TotalQuantity);
-            processOrderExist.Status = CommonMethods.GetStatusId(processOrderDto, statuses);
-            processOrderExist.InterfaceUpdateTimestamp = DateTime.Now;
-            processOrderExist.CommStatus = 1;
-            processOrderExist.BillOfMaterialHeaderUuid = billOfMaterialHeader.Item2;
-            processOrderExist.DestinoRecetaDeControl = destinoRecetaDeControl;
+            var processOrder = new ProcessOrder
+            {
+                ManufacturingOrder = processOrderDto.ManufacturingOrder,
+                ManufacturingOrderCategory = processOrderDto.ManufacturingOrderCategory,
+                ManufacturingOrderType = processOrderDto.ManufacturingOrderType,
+                GoodsRecipientName = processOrderDto.GoodsRecipientName,
+                LastChangeDateTime = ConverTo.FormatDateTime(processOrderDto.LastChangeDateTime),
+                Material = processOrderDto.Material,
+                MfgOrderActualReleaseDateTime = ConverTo.FormatDateTime(processOrderDto.MfgOrderActualReleaseDate),
+                MfgOrderCreationDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderCreationDate, processOrderDto.MfgOrderCreationTime),
+                MfgOrderPlannedEndDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderPlannedEndDate, processOrderDto.MfgOrderPlannedEndTime),
+                MfgOrderPlannedStartDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderPlannedStartDate, processOrderDto.MfgOrderPlannedStartTime),
+                MfgOrderScheduledEndDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderScheduledEndDate, processOrderDto.MfgOrderScheduledEndTime),
+                MfgOrderScheduledStartDateTime = ConverTo.SapDateTime(processOrderDto.MfgOrderScheduledStartDate, processOrderDto.MfgOrderScheduledStartTime),
+                Plant = processOrderDto.Plant,
+                ProductionPlant = processOrderDto.ProductionPlant,
+                ProductionSupervisor = processOrderDto.ProductionSupervisor,
+                ProductionUnit = processOrderDto.ProductionUnit,
+                ProductionUnitIsocode = processOrderDto.ProductionUnitISOCode,
+                ProductionUnitSapcode = processOrderDto.ProductionUnitSAPCode,
+                ProductionVersion = processOrderDto.ProductionVersion,
+                StorageLocation = processOrderDto.StorageLocation,
+                UnloadingPointName = processOrderDto.UnloadingPointName,
+                TotalQuantity = ConverTo.FormatFloat(processOrderDto.TotalQuantity),
+                Status = CommonMethods.GetStatusId(processOrderDto, statuses),
+                InterfaceCreateTimestamp = DateTime.Now,
+                CommStatus = 1,
+                BillOfMaterialHeaderUuid = billOfMaterialHeader.Item2,
+                DestinoRecetaDeControl = destinoRecetaDeControl
+            };
 
-            await processOrderCommand.UpdateAsync(processOrderExist);
-
-            var componentsExist = await componentQuery.WhereAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder);
-            if (componentsExist.Count > 0)
-                await componentCommand.DeleteRangeAsync(componentsExist);
             var components = orderComponentDto.Results
                 .Select(component => new ProcessOrderComponent
                 {
@@ -146,27 +144,29 @@ public class UpdateCommandHandler(
                 })
                 .ToList();
 
+            await processOrderCommand.AddAsync(processOrder);
             await componentCommand.AddRangeAsync(components);
             await uow.CommitAllAsync();
 
-            await logger.LogInfoAsync($"DestinoRecetaDeControl = {destinoRecetaDeControl}", "Metodo: UpdateCommandHandler");
-            await logger.LogInfoAsync($"Los registros fueron actualizados con exito", "Metodo: UpdateCommandHandler");
-            return new Response<UpdateResponse>
+            await logger.LogInfoAsync($"DestinoRecetaDeControl = {destinoRecetaDeControl}", "Metodo: CreateOrderCommandHandler");
+            await logger.LogInfoAsync($"Los registros fueron creados con exito", "Metodo: CreateOrderCommandHandler");
+            return new Response<CreateOrderResponse>
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new UpdateResponse { Result = true, Message = "Los registros fueron actualizados con exito" }
+                Content = new CreateOrderResponse { Result = true, Message = "Los registros fueron creados con exito" }
             };
         }
         catch (Exception ex)
         {
             await uow.RollbackAsync("SapScada");
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: UpdateCommandHandler");
-            return new Response<UpdateResponse>
+            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: CreateOrderCommandHandler");
+            return new Response<CreateOrderResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,
-                Content = new UpdateResponse { Result = false, Message = ex.Message }
+                Content = new CreateOrderResponse { Result = false, Message = ex.Message }
             };
         }
+
     }
 
     private async Task<List<Product>> GetProductsToAddAsync(List<string> materials)
@@ -174,11 +174,11 @@ public class UpdateCommandHandler(
         try
         {
             var products = new List<Product>();
-            var productQuerySqlDB = uow.QueryRepository<Product>("SapScada");
+            var productQuery = uow.QueryRepository<Product>("SapScada");
 
             foreach (var material in materials)
             {
-                var productExist = await productQuerySqlDB.FirstOrDefaultAsync(
+                var productExist = await productQuery.FirstOrDefaultAsync(
                     s => s.ProductCode == material,
                     tracking: false);
                 if (productExist != null)
@@ -293,4 +293,5 @@ public class UpdateCommandHandler(
         }
 
     }
+
 }
