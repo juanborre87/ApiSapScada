@@ -113,7 +113,7 @@ public class CreateOrderCommandHandler(
                 ProductionVersion = processOrderDto.ProductionVersion,
                 StorageLocation = processOrderDto.StorageLocation,
                 UnloadingPointName = processOrderDto.UnloadingPointName,
-                TotalQuantity = ConverTo.FormatFloat(processOrderDto.TotalQuantity),
+                TotalQuantity = ConverTo.FormatDecimal(processOrderDto.TotalQuantity),
                 Status = CommonMethods.GetStatusId(processOrderDto, statuses),
                 InterfaceCreateTimestamp = DateTime.Now,
                 CommStatus = 1,
@@ -138,7 +138,7 @@ public class CreateOrderCommandHandler(
                     EntryUnit = component.EntryUnit,
                     EntryUnitIsocode = component.EntryUnitISOCode,
                     EntryUnitSapcode = component.EntryUnitSAPCode,
-                    GoodsMovementEntryQty = ConverTo.FormatFloat(component.GoodsMovementEntryQty),
+                    GoodsMovementEntryQty = ConverTo.FormatDecimal(component.GoodsMovementEntryQty),
                     LastChangeDateTime = ConverTo.FormatDateTime(component.LastChangeDateTime),
                     InterfaceCreateTimestamp = DateTime.Now
                 })
@@ -280,7 +280,7 @@ public class CreateOrderCommandHandler(
                     BillOfMaterialItemUuid = Guid.TryParse(r.BillOfMaterialItemUUID, out var itemGuid) ? itemGuid : Guid.Empty,
                     BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
                     BillOfMaterialComponent = r.BillOfMaterialComponent,
-                    BillOfMaterialItemQuantity = ConverTo.FormatFloat(r.BillOfMaterialItemQuantity)
+                    BillOfMaterialItemQuantity = ConverTo.FormatDecimal(r.BillOfMaterialItemQuantity)
                 })
                 .ToList();
 

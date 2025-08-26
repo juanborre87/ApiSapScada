@@ -48,11 +48,11 @@ public partial class ProcessOrder
 
     public string ProductionUnitSapcode { get; set; }
 
-    public float? TotalQuantity { get; set; }
+    public decimal? TotalQuantity { get; set; }
 
-    public float? MfgOrderPlannedScrapQty { get; set; }
+    public decimal? MfgOrderPlannedScrapQty { get; set; }
 
-    public float? MfgOrderConfirmedYieldQty { get; set; }
+    public decimal? MfgOrderConfirmedYieldQty { get; set; }
 
     public byte? Status { get; set; }
 

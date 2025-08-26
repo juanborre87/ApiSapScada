@@ -8,7 +8,7 @@ public partial class RecipeBom
 
     public string BillOfMaterialComponent { get; set; }
 
-    public float? BillOfMaterialItemQuantity { get; set; }
+    public decimal? BillOfMaterialItemQuantity { get; set; }
 
     public virtual Recipe BillOfMaterialHeaderUu { get; set; }
 }

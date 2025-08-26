@@ -54,8 +54,13 @@ public static class ConverTo
         }
     }
 
-    public static float? FormatFloat(string? input)
+    public static decimal? FormatDecimal(string? input)
     {
-        return float.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : (float?)null;
+        if (decimal.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            return Math.Round(value, 3, MidpointRounding.AwayFromZero);
+        }
+
+        return null;
     }
 }

@@ -8,9 +8,13 @@ public class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
 {
     public void Configure(EntityTypeBuilder<Recipe> entity)
     {
-        entity.HasKey(e => e.BillOfMaterialHeaderUuid).HasName("PK__Recipe__381E66B71497D032");
+        entity.HasKey(e => e.BillOfMaterialHeaderUuid).HasName("PK__Recipe__381E66B787B80EC4");
 
         entity.ToTable("Recipe");
+
+        entity.HasIndex(e => e.CommStatus, "IX_Recipe_CommStatus");
+
+        entity.HasIndex(e => e.Material, "IX_Recipe_Material");
 
         entity.Property(e => e.BillOfMaterialHeaderUuid)
             .ValueGeneratedNever()

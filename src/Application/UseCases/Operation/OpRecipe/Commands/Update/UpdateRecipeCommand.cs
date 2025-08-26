@@ -154,7 +154,7 @@ public class UpdateRecipeCommandHandler(
                     BillOfMaterialItemUuid = Guid.TryParse(r.BillOfMaterialItemUUID, out var itemGuid) ? itemGuid : Guid.Empty,
                     BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
                     BillOfMaterialComponent = r.BillOfMaterialComponent,
-                    BillOfMaterialItemQuantity = ConverTo.FormatFloat(r.BillOfMaterialItemQuantity)
+                    BillOfMaterialItemQuantity = ConverTo.FormatDecimal(r.BillOfMaterialItemQuantity)
                 })
                 .ToList();
 

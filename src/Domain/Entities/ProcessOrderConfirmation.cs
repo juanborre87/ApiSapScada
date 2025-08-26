@@ -30,9 +30,9 @@ public partial class ProcessOrderConfirmation
 
     public string ConfirmationUnitSapcode { get; set; }
 
-    public float? ConfirmationYieldQuantity { get; set; }
+    public decimal? ConfirmationYieldQuantity { get; set; }
 
-    public float? ConfirmationScrapQuantity { get; set; }
+    public decimal? ConfirmationScrapQuantity { get; set; }
 
     public string VarianceReasonCode { get; set; }
 

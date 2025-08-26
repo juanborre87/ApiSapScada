@@ -8,13 +8,18 @@ public class ProcessOrderConfirmationConfiguration : IEntityTypeConfiguration<Pr
 {
     public void Configure(EntityTypeBuilder<ProcessOrderConfirmation> entity)
     {
-        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF14574FBBF8C");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF1458460DFE8");
 
         entity.ToTable("ProcessOrderConfirmation");
+
+        entity.HasIndex(e => e.CommStatus, "IX_ProcessOrderConfirmation_CommStatus");
+
+        entity.HasIndex(e => e.OrderId, "IX_ProcessOrderConfirmation_OrderId");
 
         entity.Property(e => e.IdGuid).ValueGeneratedNever();
         entity.Property(e => e.Batch).HasMaxLength(50);
         entity.Property(e => e.ConfirmationEntryDateTime).HasColumnType("datetime");
+        entity.Property(e => e.ConfirmationScrapQuantity).HasColumnType("decimal(18, 3)");
         entity.Property(e => e.ConfirmationUnit).HasMaxLength(50);
         entity.Property(e => e.ConfirmationUnitIsocode)
             .HasMaxLength(50)
@@ -22,6 +27,7 @@ public class ProcessOrderConfirmationConfiguration : IEntityTypeConfiguration<Pr
         entity.Property(e => e.ConfirmationUnitSapcode)
             .HasMaxLength(50)
             .HasColumnName("ConfirmationUnitSAPCode");
+        entity.Property(e => e.ConfirmationYieldQuantity).HasColumnType("decimal(18, 3)");
         entity.Property(e => e.EnteredByUser).HasMaxLength(255);
         entity.Property(e => e.Expiration).HasColumnType("datetime");
         entity.Property(e => e.FinalConfirmationType).HasMaxLength(50);

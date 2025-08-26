@@ -2,6 +2,8 @@
 
 public partial class Product
 {
+    public long Id { get; set; }
+
     public string ProductCode { get; set; }
 
     public string ProductDescription { get; set; }

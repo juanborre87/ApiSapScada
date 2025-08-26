@@ -30,7 +30,7 @@ public partial class ProcessOrderComponent
 
     public string EntryUnitSapcode { get; set; }
 
-    public float? GoodsMovementEntryQty { get; set; }
+    public decimal? GoodsMovementEntryQty { get; set; }
 
     public DateTime? LastChangeDateTime { get; set; }
 

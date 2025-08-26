@@ -111,7 +111,7 @@ public class UpdateOrderCommandHandler(
             processOrderExist.ProductionVersion = processOrderDto.ProductionVersion;
             processOrderExist.StorageLocation = processOrderDto.StorageLocation;
             processOrderExist.UnloadingPointName = processOrderDto.UnloadingPointName;
-            processOrderExist.TotalQuantity = ConverTo.FormatFloat(processOrderDto.TotalQuantity);
+            processOrderExist.TotalQuantity = ConverTo.FormatDecimal(processOrderDto.TotalQuantity);
             processOrderExist.Status = CommonMethods.GetStatusId(processOrderDto, statuses);
             processOrderExist.InterfaceUpdateTimestamp = DateTime.Now;
             processOrderExist.CommStatus = 1;
@@ -140,7 +140,7 @@ public class UpdateOrderCommandHandler(
                     EntryUnit = component.EntryUnit,
                     EntryUnitIsocode = component.EntryUnitISOCode,
                     EntryUnitSapcode = component.EntryUnitSAPCode,
-                    GoodsMovementEntryQty = ConverTo.FormatFloat(component.GoodsMovementEntryQty),
+                    GoodsMovementEntryQty = ConverTo.FormatDecimal(component.GoodsMovementEntryQty),
                     LastChangeDateTime = ConverTo.FormatDateTime(component.LastChangeDateTime),
                     InterfaceCreateTimestamp = DateTime.Now
                 })
@@ -280,7 +280,7 @@ public class UpdateOrderCommandHandler(
                     BillOfMaterialItemUuid = Guid.TryParse(r.BillOfMaterialItemUUID, out var itemGuid) ? itemGuid : Guid.Empty,
                     BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
                     BillOfMaterialComponent = r.BillOfMaterialComponent,
-                    BillOfMaterialItemQuantity = ConverTo.FormatFloat(r.BillOfMaterialItemQuantity)
+                    BillOfMaterialItemQuantity = ConverTo.FormatDecimal(r.BillOfMaterialItemQuantity)
                 })
                 .ToList();
 

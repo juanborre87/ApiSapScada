@@ -8,9 +8,17 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
 {
     public void Configure(EntityTypeBuilder<ProcessOrder> entity)
     {
-        entity.HasKey(e => e.ManufacturingOrder).HasName("PK__ProcessO__F6CEB4CE2A7D8C6E");
+        entity.HasKey(e => e.ManufacturingOrder).HasName("PK__ProcessO__F6CEB4CE595D06DE");
 
         entity.ToTable("ProcessOrder");
+
+        entity.HasIndex(e => e.BillOfMaterialHeaderUuid, "IX_ProcessOrder_BillOfMaterialHeaderUUID");
+
+        entity.HasIndex(e => e.CommStatus, "IX_ProcessOrder_CommStatus");
+
+        entity.HasIndex(e => e.Material, "IX_ProcessOrder_Material");
+
+        entity.HasIndex(e => e.Status, "IX_ProcessOrder_Status");
 
         entity.Property(e => e.ManufacturingOrder).HasMaxLength(50);
         entity.Property(e => e.BillOfMaterialHeaderUuid).HasColumnName("BillOfMaterialHeaderUUID");
@@ -22,8 +30,10 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
         entity.Property(e => e.ManufacturingOrderType).HasMaxLength(50);
         entity.Property(e => e.Material).HasMaxLength(50);
         entity.Property(e => e.MfgOrderActualReleaseDateTime).HasColumnType("datetime");
+        entity.Property(e => e.MfgOrderConfirmedYieldQty).HasColumnType("decimal(18, 3)");
         entity.Property(e => e.MfgOrderCreationDateTime).HasColumnType("datetime");
         entity.Property(e => e.MfgOrderPlannedEndDateTime).HasColumnType("datetime");
+        entity.Property(e => e.MfgOrderPlannedScrapQty).HasColumnType("decimal(18, 3)");
         entity.Property(e => e.MfgOrderPlannedStartDateTime).HasColumnType("datetime");
         entity.Property(e => e.MfgOrderScheduledEndDateTime).HasColumnType("datetime");
         entity.Property(e => e.MfgOrderScheduledStartDateTime).HasColumnType("datetime");
@@ -39,6 +49,7 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
             .HasColumnName("ProductionUnitSAPCode");
         entity.Property(e => e.ProductionVersion).HasMaxLength(50);
         entity.Property(e => e.StorageLocation).HasMaxLength(50);
+        entity.Property(e => e.TotalQuantity).HasColumnType("decimal(18, 3)");
         entity.Property(e => e.UnloadingPointName).HasMaxLength(50);
 
         entity.HasOne(d => d.BillOfMaterialHeaderUu).WithMany(p => p.ProcessOrders)
@@ -52,6 +63,7 @@ public class ProcessOrderConfiguration : IEntityTypeConfiguration<ProcessOrder>
             .HasConstraintName("FK_ProcessOrder_CommStatus");
 
         entity.HasOne(d => d.MaterialNavigation).WithMany(p => p.ProcessOrders)
+            .HasPrincipalKey(p => p.ProductCode)
             .HasForeignKey(d => d.Material)
             .HasConstraintName("FK_ProcessOrder_Product");
 

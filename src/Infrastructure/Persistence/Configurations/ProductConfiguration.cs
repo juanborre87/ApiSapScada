@@ -8,13 +8,17 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> entity)
     {
-        entity.HasKey(e => e.ProductCode).HasName("PK__Product__2F4E024E39B27D83");
+        entity.HasKey(e => e.Id).HasName("PK__Product__3214EC07375012B4");
 
         entity.ToTable("Product");
 
-        entity.Property(e => e.ProductCode).HasMaxLength(50);
+        entity.HasIndex(e => e.ProductCode, "UQ__Product__2F4E024FBAD2A94D").IsUnique();
+
         entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
         entity.Property(e => e.InterfaceUpdateTimestamp).HasColumnType("datetime");
+        entity.Property(e => e.ProductCode)
+            .IsRequired()
+            .HasMaxLength(50);
         entity.Property(e => e.ProductDescription).HasMaxLength(255);
         entity.Property(e => e.ProductType).HasMaxLength(100);
 

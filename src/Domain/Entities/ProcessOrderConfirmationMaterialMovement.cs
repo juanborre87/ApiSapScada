@@ -14,7 +14,7 @@ public partial class ProcessOrderConfirmationMaterialMovement
 
     public string EntryUnitSapcode { get; set; }
 
-    public float? QuantityInEntryUnit { get; set; }
+    public decimal? QuantityInEntryUnit { get; set; }
 
     public DateTime? GoodsMovementDateTime { get; set; }
 

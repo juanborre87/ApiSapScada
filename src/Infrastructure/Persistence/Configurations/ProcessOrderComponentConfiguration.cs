@@ -9,9 +9,13 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
 {
     public void Configure(EntityTypeBuilder<ProcessOrderComponent> entity)
     {
-        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145B0B0C94D");
+        entity.HasKey(e => e.IdGuid).HasName("PK__ProcessO__838CF145E62AB328");
 
         entity.ToTable("ProcessOrderComponent");
+
+        entity.HasIndex(e => e.ManufacturingOrder, "IX_ProcessOrderComponent_ManufacturingOrder");
+
+        entity.HasIndex(e => e.Material, "IX_ProcessOrderComponent_Material");
 
         entity.Property(e => e.IdGuid).ValueGeneratedNever();
         entity.Property(e => e.Batch).HasMaxLength(50);
@@ -22,6 +26,7 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
         entity.Property(e => e.EntryUnitSapcode)
             .HasMaxLength(50)
             .HasColumnName("EntryUnitSAPCode");
+        entity.Property(e => e.GoodsMovementEntryQty).HasColumnType("decimal(18, 3)");
         entity.Property(e => e.GoodsMovementType).HasMaxLength(50);
         entity.Property(e => e.GoodsRecipientName).HasMaxLength(50);
         entity.Property(e => e.InterfaceCreateTimestamp).HasColumnType("datetime");
@@ -42,6 +47,7 @@ public class ProcessOrderComponentConfiguration : IEntityTypeConfiguration<Proce
             .HasConstraintName("FK_ProcessOrderComponent_ProcessOrder");
 
         entity.HasOne(d => d.MaterialNavigation).WithMany(p => p.ProcessOrderComponents)
+            .HasPrincipalKey(p => p.ProductCode)
             .HasForeignKey(d => d.Material)
             .HasConstraintName("FK_ProcessOrderComponent_Product");
     }

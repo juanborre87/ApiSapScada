@@ -12,7 +12,7 @@ CREATE TABLE dbo.ProcessOrderStatus (
 );
 
 CREATE TABLE dbo.Product (
-	Id BIGINT IDENTITY NOT NULL PRIMARY KEY,
+	Id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	ProductCode NVARCHAR(50) UNIQUE,
     ProductDescription NVARCHAR(255),
     ProductType NVARCHAR(100),
