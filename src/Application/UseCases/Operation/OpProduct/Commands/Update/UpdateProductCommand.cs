@@ -44,7 +44,7 @@ public class UpdateProductCommandHandler(
 
         try
         {
-            var productExist = await productQuery.FirstOrDefaultAsync(x => x.ProductCode == eventPayload.Data.Product, true);
+            var productExist = await productQuery.FirstOrDefaultAsync(x => x.ProductCode == eventPayload.Data.Product, tracking: false);
             if (productExist == null)
             {
                 await logger.LogErrorAsync($"El producto no existe en la Bd, no se puede actualizar", "Metodo: UpdateProductCommandHandler");

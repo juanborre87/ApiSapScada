@@ -44,7 +44,7 @@ public class CreateProductCommandHandler(
 
         try
         {
-            var productExist = await productQuery.FirstOrDefaultAsync(x => x.ProductCode == eventPayload.Data.Product, false);
+            var productExist = await productQuery.FirstOrDefaultAsync(x => x.ProductCode == eventPayload.Data.Product, tracking: false);
             if (productExist != null)
             {
                 await logger.LogErrorAsync($"El producto ya existe, no se puede crear con el mismo nombre", "Metodo: CreateProductCommandHandler");

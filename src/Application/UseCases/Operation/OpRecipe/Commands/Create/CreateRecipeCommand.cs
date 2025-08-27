@@ -69,7 +69,7 @@ public class CreateRecipeCommandHandler(
             }
 
 
-            var recipeExist = await recipeQuery.FirstOrDefaultAsync(x => x.BillOfMaterialHeaderUuid == recipe.BillOfMaterialHeaderUuid, false);
+            var recipeExist = await recipeQuery.FirstOrDefaultAsync(x => x.BillOfMaterialHeaderUuid == recipe.BillOfMaterialHeaderUuid, tracking: false);
             if (recipeExist != null)
             {
                 await logger.LogErrorAsync($"La receta ya existe, no se puede crear con el mismo nombre", "Metodo: CreateRecipeCommandHandler");

@@ -54,7 +54,7 @@ public class CreateOrderCommandHandler(
 
         try
         {
-            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, false);
+            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, tracking: false);
             if (processOrderExist != null)
             {
                 await logger.LogErrorAsync($"La orden ya existe, no se puede crear con el mismo numero de orden", "Metodo: CreateOrderCommandHandler");
@@ -65,8 +65,8 @@ public class CreateOrderCommandHandler(
                 };
             }
 
-            var statuses = await statusQuery.ListAllAsync();
-            var existMaterials = (await productQuery.ListAllAsync()).Select(p => p.ProductCode).ToList();
+            var statuses = await statusQuery.ListAllAsync(tracking: false);
+            var existMaterials = (await productQuery.ListAllAsync(tracking: false)).Select(p => p.ProductCode).ToList();
             var newMaterials = new List<string>();
 
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
@@ -106,7 +106,7 @@ public class CreateOrderCommandHandler(
                 };
             }
 
-            var recipeExist = await recipeQuery.FirstOrDefaultAsync(x => x.BillOfMaterialHeaderUuid == recipe.BillOfMaterialHeaderUuid);
+            var recipeExist = await recipeQuery.FirstOrDefaultAsync(x => x.BillOfMaterialHeaderUuid == recipe.BillOfMaterialHeaderUuid, tracking: false);
             if (recipeExist == null)
             {
                 await recipeCommand.AddAsync(recipe);

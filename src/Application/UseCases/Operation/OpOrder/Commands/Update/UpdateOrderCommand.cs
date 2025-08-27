@@ -55,7 +55,7 @@ public class UpdateOrderCommandHandler(
 
         try
         {
-            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, true);
+            var processOrderExist = await processOrderQuery.FirstOrDefaultAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, tracking: true);
             if (processOrderExist == null)
             {
                 await logger.LogErrorAsync($"La orden no existe en la Bd, no se puede actualizar", "Metodo: UpdateOrderCommandHandler");
@@ -66,8 +66,8 @@ public class UpdateOrderCommandHandler(
                 };
             }
 
-            var statuses = await statusQuery.ListAllAsync();
-            var existMaterials = (await productQuery.ListAllAsync()).Select(p => p.ProductCode).ToList();
+            var statuses = await statusQuery.ListAllAsync(tracking: false);
+            var existMaterials = (await productQuery.ListAllAsync(tracking:false)).Select(p => p.ProductCode).ToList();
             var newMaterials = new List<string>();
 
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
@@ -107,7 +107,7 @@ public class UpdateOrderCommandHandler(
                 };
             }
 
-            var recipeExist = await recipeQuery.FirstOrDefaultAsync(x => x.BillOfMaterialHeaderUuid == recipe.BillOfMaterialHeaderUuid);
+            var recipeExist = await recipeQuery.FirstOrDefaultAsync(x => x.BillOfMaterialHeaderUuid == recipe.BillOfMaterialHeaderUuid, tracking: false);
             if (recipeExist == null)
             {
                 await recipeCommand.AddAsync(recipe);
@@ -143,7 +143,7 @@ public class UpdateOrderCommandHandler(
 
             await processOrderCommand.UpdateAsync(processOrderExist);
 
-            var componentsExist = await componentQuery.WhereAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder);
+            var componentsExist = await componentQuery.WhereAsync(x => x.ManufacturingOrder == eventPayload.Data.ManufacturingOrder, tracking: true);
             if (componentsExist.Count > 0)
                 await componentCommand.DeleteRangeAsync(componentsExist);
             var components = orderComponentDto.Results
