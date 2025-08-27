@@ -11,6 +11,8 @@ CREATE TABLE dbo.ProcessOrderStatus (
     Description NVARCHAR(50) NOT NULL
 );
 
+IF DB_NAME() = 'SAPSCADA'
+BEGIN
 CREATE TABLE dbo.Product (
 	Id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	ProductCode NVARCHAR(50) UNIQUE,
@@ -22,6 +24,21 @@ CREATE TABLE dbo.Product (
     CONSTRAINT FK_Product_CommStatus 
 		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
 );
+END
+ELSE
+BEGIN
+CREATE TABLE dbo.Product (
+	Id BIGINT NOT NULL PRIMARY KEY,
+	ProductCode NVARCHAR(50) UNIQUE,
+    ProductDescription NVARCHAR(255),
+    ProductType NVARCHAR(100),
+	InterfaceCreateTimestamp DATETIME, 
+	InterfaceUpdateTimestamp  DATETIME,
+	CommStatus TINYINT NOT NULL DEFAULT(0),
+    CONSTRAINT FK_Product_CommStatus 
+		FOREIGN KEY (CommStatus) REFERENCES dbo.CommStatus(Id),
+);
+END
 
 CREATE TABLE dbo.Recipe (
 	BillOfMaterialHeaderUUID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
@@ -232,9 +249,6 @@ GO
    INDICES RECOMENDADOS
    ============================== */
 
-/* ---- Producto ---- */
--- Ya tiene UNIQUE(ProductCode), suficiente para búsquedas por código
-
 /* ---- Recipe ---- */
 CREATE INDEX IX_Recipe_Material
     ON dbo.Recipe(Material);
@@ -281,8 +295,6 @@ CREATE INDEX IX_POCMM_ProcessOrderConfirmationIdGuid
 
 CREATE INDEX IX_POCMM_ProcessOrderComponentIdGuid
     ON dbo.ProcessOrderConfirmationMaterialMovement(ProcessOrderComponentIdGuid);
-
-
 
 
 /* ==============================
