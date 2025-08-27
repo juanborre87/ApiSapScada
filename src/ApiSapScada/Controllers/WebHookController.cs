@@ -4,6 +4,7 @@ using Application.UseCases.Operation.OpProduct.Commands.Create;
 using Application.UseCases.Operation.OpProduct.Commands.Update;
 using Application.UseCases.Operation.OpRecipe.Commands.Create;
 using Application.UseCases.Operation.OpRecipe.Commands.Update;
+using Arq.Host;
 using Domain.Models;
 using Domain.Models.Payload;
 using MediatR;
@@ -15,7 +16,7 @@ using System.Net;
 
 [ApiController]
 [Route("api/sap/events")]
-public class WebHookController : ControllerBase
+public class WebHookController : BaseApiController
 {
     private readonly IMediator _mediator;
     private readonly ILogger<WebHookController> _logger;
@@ -43,51 +44,43 @@ public class WebHookController : ControllerBase
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<RecipeData>>(rawBody);
                         var command = new CreateRecipeCommand<RecipeData> { EventPayload = payload };
-                        await _mediator.Send(command);
-                        break;
+                        return Result(await _mediator.Send(command));
                     }
                 case "sap.s4.beh.masterrecipe.v1.MasterRecipe.Changed.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<RecipeData>>(rawBody);
                         var command = new UpdateRecipeCommand<RecipeData> { EventPayload = payload };
-                        await _mediator.Send(command);
-                        break;
+                        return Result(await _mediator.Send(command));
                     }
                 case "sap.s4.beh.product.v1.Product.Created.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<MaterialData>>(rawBody);
                         var command = new CreateProductCommand<MaterialData> { EventPayload = payload };
-                        await _mediator.Send(command);
-                        break;
+                        return Result(await _mediator.Send(command));
                     }
                 case "sap.s4.beh.product.v1.Product.Changed.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<MaterialData>>(rawBody);
                         var command = new UpdateProductCommand<MaterialData> { EventPayload = payload };
-                        await _mediator.Send(command);
-                        break;
+                        return Result(await _mediator.Send(command));
                     }
                 case "sap.s4.beh.processorder.v1.ProcessOrder.Created.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<ProcessOrderData>>(rawBody);
                         var command = new CreateOrderCommand<ProcessOrderData> { EventPayload = payload };
-                        await _mediator.Send(command);
-                        break;
+                        return Result(await _mediator.Send(command));
                     }
                 case "sap.s4.beh.processorder.v1.ProcessOrder.Changed.v1":
                     {
                         var payload = JsonConvert.DeserializeObject<EventPayload<ProcessOrderData>>(rawBody);
                         var command = new UpdateOrderCommand<ProcessOrderData> { EventPayload = payload };
-                        await _mediator.Send(command);
-                        break;
+                        return Result(await _mediator.Send(command));
                     }
 
                 default:
                     _logger.LogWarning("Evento no soportado: {EventType}", eventType);
                     return BadRequest($"Evento no soportado: {eventType}");
             }
-
-            return Ok();
         }
         catch (Exception ex)
         {
