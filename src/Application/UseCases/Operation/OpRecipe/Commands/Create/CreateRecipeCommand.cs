@@ -94,7 +94,7 @@ public class CreateRecipeCommandHandler(
         catch (Exception ex)
         {
             await uow.RollbackAsync("SapScada");
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: CreateRecipeCommandHandler");
+            await logger.LogErrorAsync(ex.ToString(), "Metodo: CreateRecipeCommandHandler");
             return new Response<CreateRecipeResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,

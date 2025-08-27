@@ -81,7 +81,7 @@ public class UpdateProductCommandHandler(
         catch (Exception ex)
         {
             await uow.RollbackAsync("SapScada");
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: UpdateProductCommandHandler");
+            await logger.LogErrorAsync(ex.ToString(), "Metodo: UpdateProductCommandHandler");
             return new Response<UpdateProductResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,

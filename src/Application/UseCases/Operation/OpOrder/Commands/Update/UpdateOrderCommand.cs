@@ -79,8 +79,8 @@ public class UpdateOrderCommandHandler(
             List<string> materials = CommonMethods.GetMaterials(orderComponentDto);
             newMaterials.AddRange(materials);
 
-            var productToSearch = CommonMethods.GetMissingMaterials(newMaterials, existMaterials);
-            var products = await commonService.GetProductsToAddAsync(materials);
+            var missingMaterials = CommonMethods.GetMissingMaterials(newMaterials, existMaterials);
+            var products = await commonService.GetProductsToAddAsync(missingMaterials);
             await productCommand.AddRangeAsync(products);
 
             string orderOperationUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderOperation?$format=json";
@@ -183,7 +183,7 @@ public class UpdateOrderCommandHandler(
         catch (Exception ex)
         {
             await uow.RollbackAsync("SapScada");
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: UpdateOrderCommandHandler");
+            await logger.LogErrorAsync(ex.ToString(), "Metodo: UpdateOrderCommandHandler");
             return new Response<UpdateOrderResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,

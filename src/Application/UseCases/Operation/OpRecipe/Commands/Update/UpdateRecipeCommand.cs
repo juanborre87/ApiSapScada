@@ -102,7 +102,7 @@ public class UpdateRecipeCommandHandler(
         catch (Exception ex)
         {
             await uow.RollbackAsync("SapScada");
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: UpdateRecipeCommandHandler");
+            await logger.LogErrorAsync(ex.ToString(), "Metodo: UpdateRecipeCommandHandler");
             return new Response<UpdateRecipeResponse>
             {
                 StatusCode = HttpStatusCode.InternalServerError,
