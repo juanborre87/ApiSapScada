@@ -2,7 +2,7 @@
 using Domain.Entities;
 using Domain.Models;
 
-namespace Application.Common;
+namespace Application.Helpers;
 
 public static class CommonMethods
 {
@@ -85,6 +85,18 @@ public static class CommonMethods
             .ToList();
 
         return materials;
+    }
+
+    public static List<string> GetMissingMaterials(
+    List<string> newMaterials,
+    List<string> existMaterials)
+    {
+        if (newMaterials == null || existMaterials == null)
+            return new List<string>();
+
+        return newMaterials
+            .Except(existMaterials, StringComparer.OrdinalIgnoreCase) // ignora mayúsculas/minúsculas
+            .ToList();
     }
 
 }

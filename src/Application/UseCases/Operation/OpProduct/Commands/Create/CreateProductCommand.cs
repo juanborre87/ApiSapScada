@@ -1,8 +1,7 @@
 ﻿using Application.Interfaces;
-using Application.UseCases.Operation.OpRecipe.Commands.Create;
+using Application.Interfaces.Common;
 using Arq.Core;
 using Arq.Host;
-using Domain.Dtos;
 using Domain.Entities;
 using Domain.Models;
 using Domain.Models.Payload;
@@ -19,9 +18,9 @@ public class CreateProductCommand<T> : IRequest<Response<CreateProductResponse>>
 
 public class CreateProductCommandHandler(
     IConfiguration configuration,
+    ICommonService commonService,
     IFileLogger logger,
-    IUnitOfWork uow,
-    ISapService sapOrderService)
+    IUnitOfWork uow)
     : IRequestHandler<CreateProductCommand<MaterialData>, Response<CreateProductResponse>>
 {
     public async Task<Response<CreateProductResponse>> Handle(CreateProductCommand<MaterialData> request, CancellationToken cancellationToken)
@@ -56,7 +55,7 @@ public class CreateProductCommandHandler(
                 };
             }
 
-            var product = await GetProductToAddAsync(eventPayload.Data.Product);
+            var product = await commonService.GetProductToAddAsync(eventPayload.Data.Product);
             if (product == null)
             {
                 return new Response<CreateProductResponse>
@@ -83,45 +82,6 @@ public class CreateProductCommandHandler(
                 StatusCode = HttpStatusCode.InternalServerError,
                 Content = new CreateProductResponse { Result = false, Message = ex.Message }
             };
-        }
-
-    }
-
-    private async Task<Product> GetProductToAddAsync(string material)
-    {
-        try
-        {
-            // Consulta a SAP
-            string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
-            string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
-            var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
-
-            if (productDto == null)
-                return null;
-
-            string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
-            var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
-
-            // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
-            var productDescription = productDescriptionDto.Results?
-                .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
-                ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
-
-            var product = new Product
-            {
-                ProductCode = productDto.Product,
-                ProductDescription = productDescription,
-                ProductType = productDto.ProductType,
-                CommStatus = 1,
-                InterfaceCreateTimestamp = DateTime.Now
-            };
-
-            return product;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetProductsToAddAsync");
-            throw;
         }
 
     }

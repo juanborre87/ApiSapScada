@@ -1,8 +1,7 @@
-﻿using Application.Helpers;
-using Application.Interfaces;
+﻿using Application.Interfaces;
+using Application.Interfaces.Common;
 using Arq.Core;
 using Arq.Host;
-using Domain.Dtos;
 using Domain.Entities;
 using Domain.Models;
 using Domain.Models.Payload;
@@ -19,9 +18,9 @@ public class CreateRecipeCommand<T> : IRequest<Response<CreateRecipeResponse>>
 
 public class CreateRecipeCommandHandler(
     IConfiguration configuration,
+    ICommonService commonService,
     IFileLogger logger,
-    IUnitOfWork uow,
-    ISapService sapOrderService)
+    IUnitOfWork uow)
     : IRequestHandler<CreateRecipeCommand<RecipeData>, Response<CreateRecipeResponse>>
 {
     public async Task<Response<CreateRecipeResponse>> Handle(CreateRecipeCommand<RecipeData> request, CancellationToken cancellationToken)
@@ -47,7 +46,7 @@ public class CreateRecipeCommandHandler(
         try
         {
             // Consulta a SAP para traer material y planta
-            var billOfMaterialHeaderDto = await GetBillOfMaterialHeader(eventPayload.Data);
+            var billOfMaterialHeaderDto = await commonService.GetBillOfMaterialHeader(eventPayload.Data);
             if (billOfMaterialHeaderDto == null)
             {
                 return new Response<CreateRecipeResponse>
@@ -59,13 +58,13 @@ public class CreateRecipeCommandHandler(
 
 
             // Consulta a SAP para traer recipe y recipeBoms
-            var recipe = await GetRecipeToAddAsync(billOfMaterialHeaderDto);
+            var recipe = await commonService.GetRecipeToAddAsync(billOfMaterialHeaderDto);
             if (recipe == null)
             {
                 return new Response<CreateRecipeResponse>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    Content = new CreateRecipeResponse { Result = false, Message = "No existe receta en la consulta a SAP" }
+                    Content = new CreateRecipeResponse { Result = false, Message = "No existe receta o recipeBoms en la consulta a SAP" }
                 };
             }
 
@@ -104,92 +103,4 @@ public class CreateRecipeCommandHandler(
         }
 
     }
-
-    private async Task<BillOfMaterialHeaderDto> GetBillOfMaterialHeader(RecipeData data)
-    {
-        try
-        {
-            // Consulta a SAP por el dto que nos trae los datos material(producto) y planta
-            var masterRecipeUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_MASTER_RECIPE/MasterRecipeHeader(MasterRecipeGroup=" +
-                    $"'{data.MasterRecipeGroup}',MasterRecipe='{data.MasterRecipe}',MasterRecipeInternalVersion='{data.MasterRecipeInternalVersion}')/to_MatlAssgmt?$format=json";
-            var masterRecipeDto = await sapOrderService.GetFromSapAsync<MasterRecipeMatlAssgmtDto>(masterRecipeUrl);
-
-            // Si no existe un producto o material, retorna null
-            var first = masterRecipeDto.Results?.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Product));
-            if (first == null)
-            {
-                await logger.LogErrorAsync($"No existe material(producto) en la consulta a SAP", "Metodo: GetBillOfMaterialHeader");
-                return null;
-            }
-
-            var billOfMaterialHeaderUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/A_BillOfMaterial" +
-                      $"?$filter=Material eq '{first.Product}' and Plant eq '{first.Plant}'" +
-                      $"&$expand=to_BillOfMaterialItem&$format=json";
-            var billOfMaterialHeaderDto = await sapOrderService.GetFromSapAsync<BillOfMaterialHeaderDto>(billOfMaterialHeaderUrl);
-
-            // Retorna el dto que trae la receta y los datos necesarios para consultar los componentes o items de la receta
-            return billOfMaterialHeaderDto;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetBillOfMaterialHeader");
-            throw;
-        }
-
-    }
-
-    private async Task<Recipe> GetRecipeToAddAsync(BillOfMaterialHeaderDto dto)
-    {
-        try
-        {
-            // Si no existe una receta, retorna null
-            var first = dto?.Results?.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Material));
-            if (first == null)
-            {
-                await logger.LogErrorAsync($"No existe receta en la consulta a SAP", "Metodo: GetRecipeToAddAsync");
-                return null;
-            }
-
-            var billOfMaterialHeaderUUID = Guid.TryParse(first.BillOfMaterialHeaderUUID, out var guid) ? guid : Guid.Empty;
-
-            //  Creamos la nueva receta
-            var recipe = new Recipe
-            {
-                BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
-                Material = first.Material,
-                BillOfMaterial = first.BillOfMaterial,
-                InterfaceCreateTimestamp = DateTime.Now,
-                CommStatus = 1
-            };
-
-
-            // Consulta a SAP por los componentes o items de la receta
-            var billOfMaterialItemUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/" +
-                                        $"A_BillOfMaterial(guid'{billOfMaterialHeaderUUID}')/to_BillOfMaterialItem?$format=json";
-            var billOfMaterialItemDataDto = await sapOrderService.GetFromSapAsync<BillOfMaterialItemDataDto>(billOfMaterialItemUrl);
-
-            if (billOfMaterialItemDataDto?.Results == null || billOfMaterialItemDataDto.Results.Count == 0)
-                recipe.RecipeBoms = [];
-
-            recipe.RecipeBoms = billOfMaterialItemDataDto.Results
-                .Where(r => !string.IsNullOrWhiteSpace(r.BillOfMaterialComponent))
-                .Select(r => new RecipeBom
-                {
-                    BillOfMaterialItemUuid = Guid.TryParse(r.BillOfMaterialItemUUID, out var itemGuid) ? itemGuid : Guid.Empty,
-                    BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
-                    BillOfMaterialComponent = r.BillOfMaterialComponent,
-                    BillOfMaterialItemQuantity = ConverTo.FormatDecimal(r.BillOfMaterialItemQuantity)
-                })
-                .ToList();
-
-            return recipe;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetRecipeToAddAsync");
-            throw;
-        }
-
-    }
-
 }

@@ -1,6 +1,6 @@
-﻿using Application.Common;
-using Application.Helpers;
+﻿using Application.Helpers;
 using Application.Interfaces;
+using Application.Interfaces.Common;
 using Arq.Core;
 using Arq.Host;
 using Domain.Dtos;
@@ -20,6 +20,7 @@ public class CreateOrderCommand<T> : IRequest<Response<CreateOrderResponse>>
 
 public class CreateOrderCommandHandler(
     IConfiguration configuration,
+    ICommonService commonService,
     IFileLogger logger,
     IUnitOfWork uow,
     ISapService sapOrderService)
@@ -45,6 +46,7 @@ public class CreateOrderCommandHandler(
         var processOrderQuery = uow.QueryRepository<ProcessOrder>("SapScada");
         var componentCommand = uow.CommandRepository<ProcessOrderComponent>("SapScada");
         var productCommand = uow.CommandRepository<Product>("SapScada");
+        var productQuery = uow.QueryRepository<Product>("SapScada");
         var recipeCommand = uow.CommandRepository<Recipe>("SapScada");
         var recipeQuery = uow.QueryRepository<Recipe>("SapScada");
         var recipeBomCommand = uow.CommandRepository<RecipeBom>("SapScada");
@@ -64,23 +66,27 @@ public class CreateOrderCommandHandler(
             }
 
             var statuses = await statusQuery.ListAllAsync();
+            var existMaterials = (await productQuery.ListAllAsync()).Select(p => p.ProductCode).ToList();
+            var newMaterials = new List<string>();
 
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
             var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
-            var products = await GetProductsToAddAsync([processOrderDto.Material]);
-            await productCommand.AddRangeAsync(products);
+            newMaterials.Add(processOrderDto.Material);
 
             string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
             var orderComponentDto = await sapOrderService.GetFromSapAsync<ProcessOrderComponentDto>(orderComponentUrl);
             List<string> materials = CommonMethods.GetMaterials(orderComponentDto);
-            products = await GetProductsToAddAsync(materials);
+            newMaterials.AddRange(materials);
+
+            var productToSearch = CommonMethods.GetMissingMaterials(newMaterials, existMaterials);
+            var products = await commonService.GetProductsToAddAsync(materials);
             await productCommand.AddRangeAsync(products);
 
             string orderOperationUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderOperation?$format=json";
             var ProcessOrderOperationDto = await sapOrderService.GetFromSapAsync<ProcessOrderOperationDto>(orderOperationUrl);
             var destinoRecetaDeControl = CommonMethods.GetDestinoRecetaDeControl(ProcessOrderOperationDto);
 
-            var billOfMaterialHeaderDto = await GetBillOfMaterialHeader(processOrderDto.Material, processOrderDto.Plant);
+            var billOfMaterialHeaderDto = await commonService.GetBillOfMaterialHeader(processOrderDto.Material, processOrderDto.Plant);
             if (billOfMaterialHeaderDto == null)
             {
                 return new Response<CreateOrderResponse>
@@ -90,13 +96,13 @@ public class CreateOrderCommandHandler(
                 };
             }
 
-            var recipe = await GetRecipeToAddAsync(billOfMaterialHeaderDto);
+            var recipe = await commonService.GetRecipeToAddAsync(billOfMaterialHeaderDto);
             if (recipe == null)
             {
                 return new Response<CreateOrderResponse>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    Content = new CreateOrderResponse { Result = false, Message = "No existe receta en la consulta a SAP" }
+                    Content = new CreateOrderResponse { Result = false, Message = "No existe receta o recipeBoms en la consulta a SAP" }
                 };
             }
 
@@ -182,129 +188,6 @@ public class CreateOrderCommandHandler(
                 StatusCode = HttpStatusCode.InternalServerError,
                 Content = new CreateOrderResponse { Result = false, Message = ex.Message }
             };
-        }
-
-    }
-
-    private async Task<List<Product>> GetProductsToAddAsync(List<string> materials)
-    {
-        try
-        {
-            var products = new List<Product>();
-            var productQuery = uow.QueryRepository<Product>("SapScada");
-
-            foreach (var material in materials)
-            {
-                var productExist = await productQuery.FirstOrDefaultAsync(
-                    s => s.ProductCode == material,
-                    tracking: false);
-                if (productExist != null)
-                    continue;
-
-                // Consulta a SAP
-                string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
-                string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
-                var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
-
-                string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
-                var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
-
-                // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
-                var productDescription = productDescriptionDto.Results?
-                    .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
-                    ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
-
-                var product = new Product
-                {
-                    ProductCode = productDto.Product,
-                    ProductDescription = productDescription,
-                    ProductType = productDto.ProductType,
-                    CommStatus = 1,
-                    InterfaceCreateTimestamp = DateTime.Now
-                };
-                products.Add(product); // Productos faltantes por ingresar en la tabla Product
-            }
-
-            return products;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetProductsToAddAsync");
-            throw;
-        }
-
-    }
-
-    private async Task<BillOfMaterialHeaderDto> GetBillOfMaterialHeader(string material, string plant)
-    {
-        try
-        {
-            // Consulta a SAP
-            var billOfMaterialHeaderUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/A_BillOfMaterial" +
-                      $"?$filter=Material eq '{material}' and Plant eq '{plant}'" +
-                      $"&$expand=to_BillOfMaterialItem&$format=json";
-            var billOfMaterialHeaderDto = await sapOrderService.GetFromSapAsync<BillOfMaterialHeaderDto>(billOfMaterialHeaderUrl);
-
-            return billOfMaterialHeaderDto;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetBillOfMaterialHeader");
-            throw;
-        }
-
-    }
-
-    private async Task<Recipe> GetRecipeToAddAsync(BillOfMaterialHeaderDto dto)
-    {
-        try
-        {
-            // Si no existe una receta, retorna null
-            var first = dto?.Results?.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Material));
-            if (first == null)
-            {
-                await logger.LogErrorAsync($"No existe receta en la consulta a SAP", "Metodo: GetRecipeToAddAsync");
-                return null;
-            }
-
-            var billOfMaterialHeaderUUID = Guid.TryParse(first.BillOfMaterialHeaderUUID, out var guid) ? guid : Guid.Empty;
-
-            //  Creamos la nueva receta
-            var recipe = new Recipe
-            {
-                BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
-                Material = first.Material,
-                BillOfMaterial = first.BillOfMaterial,
-                InterfaceCreateTimestamp = DateTime.Now,
-                CommStatus = 1
-            };
-
-
-            // Consulta a SAP por los componentes o items de la receta
-            var billOfMaterialItemUrl = $"https://sapfioriqas.sap.acacoop.com.ar/sap/opu/odata/SAP/API_BILL_OF_MATERIAL_SRV/" +
-                                        $"A_BillOfMaterial(guid'{billOfMaterialHeaderUUID}')/to_BillOfMaterialItem?$format=json";
-            var billOfMaterialItemDataDto = await sapOrderService.GetFromSapAsync<BillOfMaterialItemDataDto>(billOfMaterialItemUrl);
-
-            if (billOfMaterialItemDataDto?.Results == null || billOfMaterialItemDataDto.Results.Count == 0)
-                recipe.RecipeBoms = [];
-
-            recipe.RecipeBoms = billOfMaterialItemDataDto.Results
-                .Where(r => !string.IsNullOrWhiteSpace(r.BillOfMaterialComponent))
-                .Select(r => new RecipeBom
-                {
-                    BillOfMaterialItemUuid = Guid.TryParse(r.BillOfMaterialItemUUID, out var itemGuid) ? itemGuid : Guid.Empty,
-                    BillOfMaterialHeaderUuid = billOfMaterialHeaderUUID,
-                    BillOfMaterialComponent = r.BillOfMaterialComponent,
-                    BillOfMaterialItemQuantity = ConverTo.FormatDecimal(r.BillOfMaterialItemQuantity)
-                })
-                .ToList();
-
-            return recipe;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetRecipeToAddAsync");
-            throw;
         }
 
     }

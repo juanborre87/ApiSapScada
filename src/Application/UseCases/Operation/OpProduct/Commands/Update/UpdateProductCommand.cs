@@ -1,7 +1,7 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Common;
 using Arq.Core;
 using Arq.Host;
-using Domain.Dtos;
 using Domain.Entities;
 using Domain.Models;
 using Domain.Models.Payload;
@@ -18,9 +18,9 @@ public class UpdateProductCommand<T> : IRequest<Response<UpdateProductResponse>>
 
 public class UpdateProductCommandHandler(
     IConfiguration configuration,
+    ICommonService commonService,
     IFileLogger logger,
-    IUnitOfWork uow,
-    ISapService sapOrderService)
+    IUnitOfWork uow)
     : IRequestHandler<UpdateProductCommand<MaterialData>, Response<UpdateProductResponse>>
 {
     public async Task<Response<UpdateProductResponse>> Handle(UpdateProductCommand<MaterialData> request, CancellationToken cancellationToken)
@@ -47,7 +47,7 @@ public class UpdateProductCommandHandler(
             var productExist = await productQuery.FirstOrDefaultAsync(x => x.ProductCode == eventPayload.Data.Product, true);
             if (productExist == null)
             {
-                await logger.LogErrorAsync($"El producto no existe, no se puede actualizar", "Metodo: UpdateProductCommandHandler");
+                await logger.LogErrorAsync($"El producto no existe en la Bd, no se puede actualizar", "Metodo: UpdateProductCommandHandler");
                 return new Response<UpdateProductResponse>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
@@ -55,7 +55,16 @@ public class UpdateProductCommandHandler(
                 };
             }
 
-            var product = await GetProductToAddAsync(eventPayload.Data.Product);
+            var product = await commonService.GetProductToAddAsync(eventPayload.Data.Product);
+            if (product == null)
+            {
+                return new Response<UpdateProductResponse>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    Content = new UpdateProductResponse { Result = false, Message = "No existe material(producto) en la consulta a SAP" }
+                };
+            }
+
             productExist.ProductDescription = product.ProductDescription;
             productExist.ProductType = product.ProductType;
             productExist.InterfaceUpdateTimestamp = DateTime.Now;
@@ -81,39 +90,4 @@ public class UpdateProductCommandHandler(
         }
 
     }
-
-    private async Task<Product> GetProductToAddAsync(string material)
-    {
-        try
-        {
-            // Consulta a SAP
-            string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
-            string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
-            var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
-
-            string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
-            var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
-
-            // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
-            var productDescription = productDescriptionDto.Results?
-                .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
-                ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
-
-            var product = new Product
-            {
-                ProductCode = productDto.Product,
-                ProductDescription = productDescription,
-                ProductType = productDto.ProductType,
-            };
-
-            return product;
-        }
-        catch (Exception ex)
-        {
-            await logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetProductsToAddAsync");
-            throw;
-        }
-
-    }
-
 }
