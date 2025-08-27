@@ -23,7 +23,7 @@ public class UpdateOrderCommandHandler(
     ICommonService commonService,
     IFileLogger logger,
     IUnitOfWork uow,
-    ISapService sapOrderService)
+    ISapService sapService)
     : IRequestHandler<UpdateOrderCommand<ProcessOrderData>, Response<UpdateOrderResponse>>
 {
     public async Task<Response<UpdateOrderResponse>> Handle(UpdateOrderCommand<ProcessOrderData> request, CancellationToken cancellationToken)
@@ -71,11 +71,11 @@ public class UpdateOrderCommandHandler(
             var newMaterials = new List<string>();
 
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";
-            var processOrderDto = await sapOrderService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
+            var processOrderDto = await sapService.GetFromSapAsync<ProcessOrderDto>(processOrderUrl);
             newMaterials.Add(processOrderDto.Material);
 
             string orderComponentUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderComponent?$format=json";
-            var orderComponentDto = await sapOrderService.GetFromSapAsync<ProcessOrderComponentDto>(orderComponentUrl);
+            var orderComponentDto = await sapService.GetFromSapAsync<ProcessOrderComponentDto>(orderComponentUrl);
             List<string> materials = CommonMethods.GetMaterials(orderComponentDto);
             newMaterials.AddRange(materials);
 
@@ -84,7 +84,7 @@ public class UpdateOrderCommandHandler(
             await productCommand.AddRangeAsync(products);
 
             string orderOperationUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/SAP/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')/to_ProcessOrderOperation?$format=json";
-            var ProcessOrderOperationDto = await sapOrderService.GetFromSapAsync<ProcessOrderOperationDto>(orderOperationUrl);
+            var ProcessOrderOperationDto = await sapService.GetFromSapAsync<ProcessOrderOperationDto>(orderOperationUrl);
             var destinoRecetaDeControl = CommonMethods.GetDestinoRecetaDeControl(ProcessOrderOperationDto);
 
             var billOfMaterialHeaderDto = await commonService.GetBillOfMaterialHeader(processOrderDto.Material, processOrderDto.Plant);
