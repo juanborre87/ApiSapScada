@@ -69,7 +69,7 @@ public class CommonService : ICommonService
         }
         catch (Exception ex)
         {
-            await _logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetRecipeToAddAsync");
+            await _logger.LogErrorAsync(ex.ToString(), "Metodo: GetRecipeToAddAsync");
             throw;
         }
 
@@ -88,7 +88,9 @@ public class CommonService : ICommonService
             var first = masterRecipeDto.Results?.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Product));
             if (first == null)
             {
-                await _logger.LogErrorAsync($"No existe material(producto) en la consulta a SAP", "Metodo: GetBillOfMaterialHeader");
+                await _logger.LogErrorAsync($"No existe receta en la consulta a SAP con los siguientes datos: " +
+                    $"MasterRecipeGroup: {data.MasterRecipeGroup}, MasterRecipe: {data.MasterRecipe}, MasterRecipeInternalVersion: {data.MasterRecipeInternalVersion}",
+                    "Metodo: GetBillOfMaterialHeader, Parametro: RecipeData");
                 return null;
             }
 
@@ -100,7 +102,8 @@ public class CommonService : ICommonService
 
             if (billOfMaterialHeaderDto == null)
             {
-                await _logger.LogErrorAsync($"No existe billOfMaterialHeader en la consulta a SAP", "Metodo: GetBillOfMaterialHeader");
+                await _logger.LogErrorAsync($"No existe billOfMaterialHeader en la consulta a SAP con los siguientes datos: " +
+                    $"material: {first.Product} planta: {first.Plant}", "Metodo: GetBillOfMaterialHeader, Parametro: RecipeData");
                 return null;
             }
 
@@ -109,7 +112,7 @@ public class CommonService : ICommonService
         }
         catch (Exception ex)
         {
-            await _logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetBillOfMaterialHeader");
+            await _logger.LogErrorAsync(ex.ToString(), "Metodo: GetBillOfMaterialHeader");
             throw;
         }
 
@@ -127,7 +130,8 @@ public class CommonService : ICommonService
 
             if (billOfMaterialHeaderDto == null)
             {
-                await _logger.LogErrorAsync($"No existe billOfMaterialHeader en la consulta a SAP", "Metodo: GetBillOfMaterialHeader");
+                await _logger.LogErrorAsync($"No existe billOfMaterialHeader en la consulta a SAP con los siguientes datos: " +
+                    $"material: {material} planta: {plant}", "Metodo: GetBillOfMaterialHeader, Parametros: material, plant");
                 return null;
             }
 
@@ -136,7 +140,7 @@ public class CommonService : ICommonService
         }
         catch (Exception ex)
         {
-            await _logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetBillOfMaterialHeader");
+            await _logger.LogErrorAsync(ex.ToString(), "Metodo: GetBillOfMaterialHeader");
             throw;
         }
 
@@ -150,31 +154,7 @@ public class CommonService : ICommonService
 
             foreach (var material in materials)
             {
-                // Consulta a SAP el producto
-                string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
-                string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
-                var productDto = await _sapService.GetFromSapAsync<ProductDto>(productUrl);
-
-                if (productDto == null)
-                    return null;
-
-                // Consulta a SAP la descripcion del producto
-                string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
-                var productDescriptionDto = await _sapService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
-
-                // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
-                var productDescription = productDescriptionDto.Results?
-                    .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
-                    ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
-
-                var product = new Product
-                {
-                    ProductCode = productDto.Product,
-                    ProductDescription = productDescription,
-                    ProductType = productDto.ProductType,
-                    CommStatus = 1,
-                    InterfaceCreateTimestamp = DateTime.Now
-                };
+                var product = await GetProductToAddAsync(material);
                 products.Add(product); // Productos faltantes por ingresar en la tabla Product
             }
 
@@ -182,7 +162,7 @@ public class CommonService : ICommonService
         }
         catch (Exception ex)
         {
-            await _logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetProductsToAddAsync");
+            await _logger.LogErrorAsync(ex.ToString(), "Metodo: GetProductsToAddAsync");
             throw;
         }
 
@@ -198,7 +178,11 @@ public class CommonService : ICommonService
             var productDto = await _sapService.GetFromSapAsync<ProductDto>(productUrl);
 
             if (productDto == null)
+            {
+                await _logger.LogErrorAsync($"No existe producto en la consulta a SAP con los siguientes datos: " +
+                    $"material: {material}", "Metodo: GetProductToAddAsync");
                 return null;
+            }
 
             // Consulta a SAP la descripcion del producto
             string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
@@ -208,6 +192,12 @@ public class CommonService : ICommonService
             var productDescription = productDescriptionDto.Results?
                 .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
                 ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
+
+            if (productDescription == null)
+            {
+                await _logger.LogInfoAsync($"No existe descripcion del producto en la consulta a SAP con los siguientes datos: " +
+                    $"material: {material}", "Metodo: GetProductToAddAsync");
+            }
 
             var product = new Product
             {
@@ -222,7 +212,7 @@ public class CommonService : ICommonService
         }
         catch (Exception ex)
         {
-            await _logger.LogErrorAsync(ex.Message.ToString(), "Metodo: GetProductsToAddAsync");
+            await _logger.LogErrorAsync(ex.ToString(), "Metodo: GetProductsToAddAsync");
             throw;
         }
 
