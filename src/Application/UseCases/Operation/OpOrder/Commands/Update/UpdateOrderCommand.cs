@@ -67,7 +67,7 @@ public class UpdateOrderCommandHandler(
             }
 
             var statuses = await statusQuery.ListAllAsync(tracking: false);
-            var existMaterials = (await productQuery.ListAllAsync(tracking:false)).Select(p => p.ProductCode).ToList();
+            var existMaterials = (await productQuery.ListAllAsync(tracking: false)).Select(p => p.ProductCode).ToList();
             var newMaterials = new List<string>();
 
             string processOrderUrl = $"https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/API_PROCESS_ORDER_2_SRV/A_ProcessOrder_2('{eventPayload.Data.ManufacturingOrder}')?$format=json";

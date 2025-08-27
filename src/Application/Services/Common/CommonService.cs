@@ -49,9 +49,6 @@ public class CommonService : ICommonService
             var billOfMaterialItemDataDto = await _sapService.GetFromSapAsync<BillOfMaterialItemDataDto>(billOfMaterialItemUrl);
 
             if (billOfMaterialItemDataDto?.Results == null || billOfMaterialItemDataDto.Results.Count == 0)
-                recipe.RecipeBoms = [];
-
-            if (recipe.RecipeBoms.Count == 0)
             {
                 await _logger.LogErrorAsync($"No existen RecipeBoms en la consulta a SAP", "Metodo: GetRecipeToAddAsync");
                 return null;
@@ -153,7 +150,31 @@ public class CommonService : ICommonService
 
             foreach (var material in materials)
             {
-                var product = await GetProductToAddAsync(material);
+                // Consulta a SAP el producto
+                string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
+                string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
+                var productDto = await _sapService.GetFromSapAsync<ProductDto>(productUrl);
+
+                if (productDto == null)
+                    return null;
+
+                // Consulta a SAP la descripcion del producto
+                string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
+                var productDescriptionDto = await _sapService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
+
+                // Esto intentará primero con "ES" y, si no encuentra, tomará el primero disponible
+                var productDescription = productDescriptionDto.Results?
+                    .FirstOrDefault(r => r.Language == "ES")?.ProductDescription
+                    ?? productDescriptionDto.Results?.FirstOrDefault()?.ProductDescription;
+
+                var product = new Product
+                {
+                    ProductCode = productDto.Product,
+                    ProductDescription = productDescription,
+                    ProductType = productDto.ProductType,
+                    CommStatus = 1,
+                    InterfaceCreateTimestamp = DateTime.Now
+                };
                 products.Add(product); // Productos faltantes por ingresar en la tabla Product
             }
 
