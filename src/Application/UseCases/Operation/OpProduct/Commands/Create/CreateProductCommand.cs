@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Application.UseCases.Operation.OpRecipe.Commands.Create;
 using Arq.Core;
 using Arq.Host;
 using Domain.Dtos;
@@ -56,6 +57,14 @@ public class CreateProductCommandHandler(
             }
 
             var product = await GetProductToAddAsync(eventPayload.Data.Product);
+            if (product == null)
+            {
+                return new Response<CreateProductResponse>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    Content = new CreateProductResponse { Result = false, Message = "No existe material(producto) en la consulta a SAP" }
+                };
+            }
             await productCommand.AddAsync(product);
 
             await logger.LogInfoAsync($"Los registros fueron creados con exito", "Metodo: CreateProductCommandHandler");
@@ -86,6 +95,9 @@ public class CreateProductCommandHandler(
             string baseUrl = "https://sapfioriqas.sap.acacoop.com.ar:443/sap/opu/odata/sap/api_product_srv";
             string productUrl = $"{baseUrl}/A_Product('{material}')?$format=json";
             var productDto = await sapOrderService.GetFromSapAsync<ProductDto>(productUrl);
+
+            if (productDto == null)
+                return null;
 
             string descriptionUrl = $"{baseUrl}/A_Product('{material}')/to_Description?$format=json";
             var productDescriptionDto = await sapOrderService.GetFromSapAsync<ProductDescriptionDto>(descriptionUrl);
